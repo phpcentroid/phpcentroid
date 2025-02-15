@@ -4,7 +4,6 @@ use PHPCentroid\Query\MemberListExpression;
 use PHPCentroid\Query\OpenDataParser;
 use PHPUnit\Framework\TestCase;
 use PHPCentroid\Query\MemberExpression;
-use PHPCentroid\Query\MethodCallExpression;
 use PHPCentroid\Query\SqlFormatter;
 
 class TestOData extends TestCase
@@ -13,7 +12,7 @@ class TestOData extends TestCase
         $parser = new OpenDataParser();
         $expr = $parser->parse("familyName eq 'Thomas' and giveName eq 'John'");
         $formatter = new SqlFormatter();
-        $this->assertEquals("((`familyName` = 'Thomas') AND (`giveName` = 'John'))" ,$formatter->format($expr));
+        $this->assertEquals("((`familyName` = 'Thomas') AND (`giveName` = 'John'))",$formatter->format($expr));
     }
 
     public function test_OrExpression() {
