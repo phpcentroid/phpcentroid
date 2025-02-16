@@ -1,13 +1,7 @@
 <?php
 namespace PHPCentroid\Data;
 use PHPCentroid\Common\DynamicObject;
-
-/**
- * Created by PhpStorm.
- * User: kbarbounakis
- * Date: 16/10/2016
- * Time: 9:27 πμ
- */
+use PHPCentroid\Common\EventEmitter;
 
 /**
  * Class DataModel
@@ -21,6 +15,16 @@ use PHPCentroid\Common\DynamicObject;
  */
 class DataModel extends DynamicObject
 {
+
+    public DataModelEventEmitter $before;
+    public DataModelEventEmitter $after;
+
+    public function __construct() {
+        parent::__construct();
+        $this->before = new DataModelEventEmitter();
+        $this->after = new DataModelEventEmitter();
+    }
+
     public function get_source(): string {
         return $this->source ?? $this->name . 'Base';
     }
