@@ -16,6 +16,7 @@
     "phpunit/phpunit": "10.5.x-dev"
   },
   "require": {
-    "ext-json": "*"
+    "ext-json": "*",
+    "lodash-php/lodash-php": "dev-master"
   }
 }

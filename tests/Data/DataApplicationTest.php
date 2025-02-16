@@ -4,16 +4,19 @@ namespace Data;
 
 class ApplicationService1 extends \PHPCentroid\Common\ApplicationService {
 
-    public function get_message() {
+    public function get_message(): string {
         return 'Hello';
     }
 }
 
-use PHPCentroid\Data\DataApplication;
+use Exception;
 use PHPUnit\Framework\TestCase;
 
 class DataApplicationTest extends TestCase
 {
+    /**
+     * @throws Exception
+     */
     public function testServicesProperty()
     {
         $application = new \PHPCentroid\Data\DataApplication();

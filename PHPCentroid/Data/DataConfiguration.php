@@ -1,25 +1,24 @@
 <?php
 namespace PHPCentroid\Data;
 
+use PHPCentroid\Common\ApplicationService;
 use PHPCentroid\Common\TextUtils;
 
-class DataConfiguration
+class DataConfiguration extends ApplicationService
 {
-    protected $cwd;
-    public function __construct(?string $cwd = NULL)
+    public function __construct(DataApplication $application)
     {
-        $this->cwd = is_string($cwd) ? $cwd : getcwd();
+        parent::__construct($application);
     }
 
     /**
      * @param $name
      * @return DataModel|null
      */
-    public function get_model($name): ?DataModel {
-        $path = TextUtils::join_path( $this->cwd, 'config', 'models', $name.'.json');
-        if (file_exists($path)) {
-            $string = file_get_contents($path);
-            return new DataModel(json_decode($string));
+    public function getModel($name): ?DataModel {
+        $schema = $this->application->services->get(SchemaLoader::class)->get($name);
+        if ($schema) {
+            return new DataModel($schema);
         }
         return NULL;
     }

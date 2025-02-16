@@ -13,23 +13,33 @@ use PHPCentroid\Common\EventEmitter;
  * @property string $view
  * @package PHPCentroid\Data
  */
-class DataModel extends DynamicObject
+class DataModel
 {
+    public readonly EventEmitter $beforeSave;
+    public readonly EventEmitter $beforeRemove;
+    public readonly EventEmitter $beforeExecute;
+    public readonly EventEmitter $beforeUpgrade;
 
-    public DataModelEventEmitter $before;
-    public DataModelEventEmitter $after;
+    public readonly EventEmitter $afterSave;
+    public readonly EventEmitter $afterRemove;
+    public readonly EventEmitter $afterExecute;
+    public readonly EventEmitter $afterUpgrade;
 
-    public function __construct() {
-        parent::__construct();
-        $this->before = new DataModelEventEmitter();
-        $this->after = new DataModelEventEmitter();
+    public readonly object $properties;
+
+    public function __construct(object $schema) {
+
+        $this->properties = $schema;
+
+        $this->beforeSave = new EventEmitter();
+        $this->beforeRemove = new EventEmitter();
+        $this->beforeExecute = new EventEmitter();
+        $this->beforeUpgrade = new EventEmitter();
+
+        $this->afterSave = new EventEmitter();
+        $this->afterRemove = new EventEmitter();
+        $this->afterExecute = new EventEmitter();
+        $this->afterUpgrade = new EventEmitter();
     }
 
-    public function get_source(): string {
-        return $this->source ?? $this->name . 'Base';
-    }
-
-    public function get_view(): string {
-        return $this->view ?? $this->source . 'Data';
-    }
 }

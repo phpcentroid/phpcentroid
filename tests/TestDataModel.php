@@ -6,10 +6,14 @@ use PHPUnit\Framework\TestCase;
 
 class TestDataModel extends TestCase
 {
+    /**
+     * @throws Exception
+     */
     public function test_get_json_model() {
-        $conf = new DataConfiguration(realpath('.'));
-        $model = $conf->get_model('Thing');
+        $app = new \PHPCentroid\Data\DataApplication(realpath('.'));
+        $model = $app->getConfiguration()->getModel('Thing');
         $this->assertTrue($model instanceof DataModel, '$model must be an install of DataModel class');
+        $this->assertTrue($model->properties->name == 'Thing', '$model->properties->name must be "Thing"');
     }
 
 

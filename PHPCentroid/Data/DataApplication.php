@@ -2,15 +2,32 @@
 
 namespace PHPCentroid\Data;
 
+use Exception;
 use PHPCentroid\Common\Application;
-use PHPCentroid\Common\ServiceContainer;
 
 class DataApplication extends Application
 {
 
-    public function __construct()
+    public readonly string $cwd;
+
+    public function __construct(?string $cwd = NULL)
     {
         parent::__construct();
+        $this->cwd = $cwd ?? getcwd();
+        try {
+            // set data configuration service
+            $this->services->set(new DataConfiguration($this));
+            // set schema loader service
+            $this->services->use(SchemaLoader::class, new FileSchemaLoader($this));
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
     }
+
+    public function getConfiguration(): DataConfiguration
+    {
+        return $this->services->get(DataConfiguration::class);
+    }
+
 
 }
