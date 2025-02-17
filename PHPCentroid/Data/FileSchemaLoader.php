@@ -2,7 +2,9 @@
 
 namespace PHPCentroid\Data;
 
+use PHPCentroid\Common\JSONSerialize;
 use PHPCentroid\Common\TextUtils;
+use ReflectionException;
 
 class FileSchemaLoader extends SchemaLoader
 {
@@ -16,18 +18,22 @@ class FileSchemaLoader extends SchemaLoader
         $this->rootDir =  TextUtils::join_path( $application->cwd, 'config', 'models');
     }
 
+    /**
+     * @throws ReflectionException
+     */
     protected function read(): void {
         $files = glob($this->rootDir . DIRECTORY_SEPARATOR . '*.json');
         foreach ($files as $file) {
             if (is_file($file)) {
                 $string = file_get_contents($file);
+                JSONSerialize::unserialize(DataModelProperties::class, $string);
                 $json = json_decode($string, true);
                 $this->set($json);
             }
         }
     }
 
-    public function get(string $name): ?DataModel
+    public function get(string $name): ?array
     {
         if (empty($this->schemas)) {
             $this->read();

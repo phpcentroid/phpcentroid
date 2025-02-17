@@ -2,6 +2,9 @@
 
 namespace PHPCentroid\Data;
 
+use ReflectionClass;
+use ReflectionProperty;
+
 class DataModelProperties extends \stdClass
 {
     /**
@@ -55,13 +58,16 @@ class DataModelProperties extends \stdClass
     public array $privileges = [];
     public array $views = [];
 
-    static public function fromJson($json): DataModelProperties{
-        //if you pass in a string, decode it to an object
-        $json = is_string($json) ? json_decode($json) : $json;
+    /**
+     * @throws \ReflectionException
+     */
+    static public function fromJson(array $json): DataModelProperties{
+        $reflect = new ReflectionClass(self::class);
+        $props   = $reflect->getProperties(ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED);
         $object = new self();
         foreach($json as $key=>$value){
-            if(is_object($value)){
-                $object->{$key} = DataModelProperties::fromJson($json);
+            if(is_array($value)){
+                $object->{$key} = DataModelProperties::fromJson($value);
             }
             else{
                 $object->{$key} = $value;

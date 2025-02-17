@@ -13,11 +13,11 @@ abstract class SchemaLoader extends ApplicationService
         parent::__construct($application);
     }
 
-    public function get(string $name): ?DataModel {
+    public function get(string $name): ?array {
         return $this->schemas[$name] ?? NULL;
     }
-    public function set(object $schema): void {
-        $this->schemas[$schema->properties->name] = $schema;
+    public function set(array $schema): void {
+        $this->schemas[$schema['name']] = $schema;
     }
 
 }
