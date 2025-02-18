@@ -10,7 +10,7 @@ class DataModelProperties extends stdClass
     /**
      * @var DataField[] $fields An array of DataField objects which represents the fields of this model
      */
-    protected array $fields = [];
+    public array $fields = [];
     public function __construct()
     {
 
@@ -54,20 +54,7 @@ class DataModelProperties extends stdClass
      */
     public string $view;
 
-    /**
-     * @return DataField[]
-     */
-    public function getFields(): array
-    {
-        return $this->fields;
-    }
-    /**
-     * @param DataField[] $fields
-     */
-    public function setFields(array $fields): void
-    {
-        $this->fields = $fields;
-    }
+
     /**
      * @var DataModelConstraint[] $constraints An array of strings which represents the constraints of this model
      */
