@@ -17,6 +17,7 @@
   },
   "require": {
     "ext-json": "*",
-    "lodash-php/lodash-php": "dev-master"
+    "lodash-php/lodash-php": "dev-master",
+    "symfony/serializer-pack": "dev-main"
   }
 }

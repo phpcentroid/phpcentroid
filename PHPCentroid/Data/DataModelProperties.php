@@ -2,11 +2,20 @@
 
 namespace PHPCentroid\Data;
 
-use ReflectionClass;
-use ReflectionProperty;
+use stdClass;
+use Symfony\Component\Serializer\Attribute\Groups;
 
-class DataModelProperties extends \stdClass
+class DataModelProperties extends stdClass
 {
+    /**
+     * @var DataField[] $fields An array of DataField objects which represents the fields of this model
+     */
+    protected array $fields = [];
+    public function __construct()
+    {
+
+    }
+
     /**
      * @var string $name A string which represents the name of this model e.g. Article, User, Comment etc
      */
@@ -44,10 +53,21 @@ class DataModelProperties extends \stdClass
      * @var string $view A string which represents the view of this model e.g. ArticleData, UserData, CommentData etc
      */
     public string $view;
+
     /**
-     * @var DataField[] $fields An array of DataField objects which represents the fields of this model
+     * @return DataField[]
      */
-    public array $fields = [];
+    public function getFields(): array
+    {
+        return $this->fields;
+    }
+    /**
+     * @param DataField[] $fields
+     */
+    public function setFields(array $fields): void
+    {
+        $this->fields = $fields;
+    }
     /**
      * @var DataModelConstraint[] $constraints An array of strings which represents the constraints of this model
      */
@@ -58,22 +78,7 @@ class DataModelProperties extends \stdClass
     public array $privileges = [];
     public array $views = [];
 
-    /**
-     * @throws \ReflectionException
-     */
-    static public function fromJson(array $json): DataModelProperties{
-        $reflect = new ReflectionClass(self::class);
-        $props   = $reflect->getProperties(ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED);
-        $object = new self();
-        foreach($json as $key=>$value){
-            if(is_array($value)){
-                $object->{$key} = DataModelProperties::fromJson($value);
-            }
-            else{
-                $object->{$key} = $value;
-            }
-        }
-        return $object;
-    }
+
+
 
 }
