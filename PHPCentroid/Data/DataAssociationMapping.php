@@ -7,9 +7,9 @@ use stdClass;
 class DataAssociationMapping extends stdClass
 {
     /**
-     * @var DataAssociationTypeEnum $associationType A string which represents the type of association e.g. association or junction
+     * @var string $associationType A string which represents the type of association e.g. association or junction
      */
-    public DataAssociationTypeEnum $associationType;
+    public string $associationType;
     /**
      * @var string $associationAdapter A string which represents the adapter of the association e.g. GroupMembers ArticleTags etc
      */
@@ -47,7 +47,7 @@ class DataAssociationMapping extends stdClass
      */
     public array $privileges = [];
     /**
-     * @var ?object $options An object which represents the options of this association
+     * @var ?array $options An object which represents the options of this association
      */
-    public ?object $options;
+    public ?array $options;
 }

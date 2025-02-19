@@ -3,17 +3,12 @@
 namespace PHPCentroid\Data;
 
 use stdClass;
-use Symfony\Component\Serializer\Attribute\Groups;
 
 class DataModelProperties extends stdClass
 {
-    /**
-     * @var DataField[] $fields An array of DataField objects which represents the fields of this model
-     */
-    public array $fields = [];
     public function __construct()
     {
-
+        $this->fields = new DataFieldCollection();
     }
 
     /**
@@ -56,16 +51,49 @@ class DataModelProperties extends stdClass
 
 
     /**
-     * @var DataModelConstraint[] $constraints An array of strings which represents the constraints of this model
+     * @var DataModelConstraint[] An array of strings which represents the constraints of this model
      */
     public array $constraints = [];
     /**
-     * @var DataObjectPrivilege[] $privileges An array of DataObjectPrivilege objects which represents the privileges of this model
+     * @var DataObjectPrivilege[] An array of DataObjectPrivilege objects which represents the privileges of this model
      */
     public array $privileges = [];
     public array $views = [];
 
+    /**
+     * @var DataFieldCollection<DataField>
+     */
+    public DataFieldCollection $fields;
 
+    public function setFields(DataField  ...$fields): void {
+        $this->fields = new DataFieldCollection(...$fields);
+    }
 
+//    /**
+//     * @var DataField[] An array of DataField objects which represents the fields of this model
+//     */
+//    protected array $fields = [];
+//
+//
+//    /**
+//     * @return DataField[]
+//     */
+//    public function getFields(): array
+//    {
+//        return $this->fields;
+//    }
+//
+//    public function addField(DataField $field): void
+//    {
+//        $this->fields[] = $field;
+//    }
+
+//    public function removeField(DataField $field): void
+//    {
+//        $index = array_search($field, $this->fields);
+//        if ($index >= 0) {
+//            array_splice($this->fields, $index, 1);
+//        }
+//    }
 
 }

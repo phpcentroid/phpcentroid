@@ -68,13 +68,13 @@ class DataField extends \stdClass
      */
     public ?bool $nested = FALSE;
     /**
-     * @var ?object $value An object which represents the default value of this attribute
+     * @var mixed $value An object which represents the default value of this attribute
      */
-    public ?object $value;
+    public mixed $value;
     /**
-     * @var ?object $calculation An object which represents the calculated value of this attribute
+     * @var mixed $calculation An object which represents the calculated value of this attribute
      */
-    public ?object $calculation;
+    public mixed $calculation;
     /**
      * @var ?DataAssociationMapping $mapping A DataAssociationMapping object which represents the mapping of this attribute
      * A mapping is used to define the relationship between two models e.g. User has many Articles, Article belongs to User etc

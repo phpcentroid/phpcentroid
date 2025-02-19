@@ -13,12 +13,19 @@ class FileSchemaLoader extends SchemaLoader
 {
 
     protected string $rootDir;
+    private Serializer $serializer;
 
     public function __construct(DataApplication $application)
     {
         parent::__construct($application);
         // set root directory
         $this->rootDir =  TextUtils::join_path( $application->cwd, 'config', 'models');
+        $this->serializer = new Serializer([
+            new ArrayDenormalizer(),
+            new ObjectNormalizer(null, null, null, new ReflectionExtractor()),
+        ], [
+            new JsonEncoder()
+        ]);
     }
 
     protected function read(): void {
@@ -26,16 +33,10 @@ class FileSchemaLoader extends SchemaLoader
         foreach ($files as $file) {
             if (is_file($file)) {
                 $string = file_get_contents($file);
-                $serializer = new Serializer([
-                    new ArrayDenormalizer(),
-                    new ObjectNormalizer(null, null, null, new ReflectionExtractor()),
-                ], [
-                    new JsonEncoder()
-                ]);
                 /**
                  * @var DataModelProperties $schema
                  */
-                $schema = $serializer->deserialize($string, DataModelProperties::class, 'json');
+                $schema = $this->serializer->deserialize($string, DataModelProperties::class, 'json');
                 $this->set($schema);
             }
         }

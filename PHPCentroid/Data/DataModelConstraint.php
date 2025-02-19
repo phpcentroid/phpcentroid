@@ -5,9 +5,9 @@ namespace PHPCentroid\Data;
 class DataModelConstraint extends \stdClass
 {
     /**
-     * @var DataConstraintTypeEnum $type A string which represents the type of this constraint e.g. unique
+     * @var string $type A string which represents the type of this constraint e.g. unique
      */
-    public DataConstraintTypeEnum $type;
+    public string $type;
     /**
      * @var string $description A short description for this constraint e.g. Unique identifier field must be unique across different records.
      */

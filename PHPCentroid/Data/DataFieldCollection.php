@@ -2,28 +2,67 @@
 
 namespace PHPCentroid\Data;
 
+use ArrayAccess;
 use ArrayIterator;
 use Countable;
 use IteratorAggregate;
 
-final class DataFieldCollection implements Countable, IteratorAggregate
-{
+class DataFieldCollection implements IteratorAggregate, Countable, ArrayAccess {
     /**
-     * @var DataField[] $fields An array of DataField object
+     * @var DataField[] $items
      */
-    private array $fields;
+    protected array $items = [];
 
-    public function __construct(DataField ...$fields)
-    {
-        $this->fields = $fields;
+    function __construct(DataField ...$items) {
+        $this->items = $items;
     }
+
+    public function getIterator(): ArrayIterator {
+        return new ArrayIterator($this->items);
+    }
+
     public function count(): int
     {
-        return count($this->fields);
-    }
-    public function getIterator(): ArrayIterator
-    {
-        return new ArrayIterator($this->fields);
+        return count($this->items);
     }
 
+    public function add(DataField $field): void {
+        $this->items[] = $field;
+    }
+
+    public function get(string $name): ?DataField {
+        foreach ($this->items as $field) {
+            if ($field->name === $name) {
+                return $field;
+            }
+        }
+        return null;
+    }
+
+    public function remove(DataField $field): void {
+        $index = array_search($field, $this->items);
+        if ($index >= 0) {
+            array_splice($this->items, $index, 1);
+        }
+    }
+
+    public function offsetExists(mixed $offset): bool
+    {
+        return isset($this->items[$offset]);
+    }
+
+    public function offsetGet(mixed $offset): DataField
+    {
+        return $this->items[$offset];
+    }
+
+    public function offsetSet(mixed $offset, mixed $value): void
+    {
+        $this->items[$offset] = $value;
+    }
+
+    public function offsetUnset(mixed $offset): void
+    {
+        unset($this->items[$offset]);
+    }
 }

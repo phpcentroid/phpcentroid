@@ -7,15 +7,15 @@ use stdClass;
 class DataObjectPrivilege extends stdClass
 {
     /**
-     * @var PrivilegeMask $mask A number which represents permission mask
+     * @var string $mask A number which represents permission mask
      * The mask is a combination of the following values: 1=Read, 2=Create, 4=Update, 8=Delete, 16=Execute
      * The mask can be calculated by adding the values of the required permissions e.g. Read+Create+Update=7
      */
-    public PrivilegeMask $mask;
+    public string $mask;
     /**
-     * @var PrivilegeTypeEnum $type A string which represents the permission scope.
+     * @var string $type A string which represents the permission scope.
      */
-    public PrivilegeTypeEnum $type;
+    public string $type;
     /**
      * @var string $account A string which represents the name of the security group where this privilege will be applied e.g. Administrators, Sales etc.
      * If the current user does not belong to the specified security group, the privilege will not be granted.
