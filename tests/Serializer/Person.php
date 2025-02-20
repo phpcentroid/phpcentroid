@@ -11,11 +11,11 @@ class Person
 {
 
     /**
-     * @param ?string $name
-     * @param ?int $age
-     * @param ?string $city
+     * @param string $name
+     * @param int $age
+     * @param string $city
      */
-    public function __construct(?string $name = NULL, ?int $age = NULL, ?string $city = NULL)
+    public function __construct(string $name, int $age, string $city)
     {
         $this->name = $name;
         $this->age = $age;

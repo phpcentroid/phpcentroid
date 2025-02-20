@@ -11,10 +11,6 @@ class DataField extends stdClass
      */
     public string $name;
     /**
-     * @var string $property A string which represents the name of the property of this attribute e.g. title, description, dateCreated etc
-     */
-    public string $property;
-    /**
      * @var string $type A string which represents the type of this attribute e.g. Text, Number, Boolean etc
      */
     public string $type;
@@ -53,11 +49,11 @@ class DataField extends stdClass
     /**
      * @var ?bool $primary A boolean which represents whether this attribute is the primary key or not
      */
-    public ?bool $primary;
+    public ?bool $primary = FALSE;
     /**
      * @var ?bool $many A boolean which represents whether this attribute is a collection or not
      */
-    public ?bool $many;
+    public ?bool $many = FALSE;
     /**
      * @var string $multiplicity A string which represents the multiplicity of this attribute e.g. OneToOne, OneToMany, ManyToOne, ManyToMany or ZeroOrOne etc
      */
@@ -66,13 +62,13 @@ class DataField extends stdClass
      * @var ?bool $expandable A boolean which represents whether this attribute is expandable or not
      * An expandable attribute which describes a relationship between models will be represented as an object or an array of objects
      */
-    public ?bool $expandable;
+    public ?bool $expandable = FALSE;
     /**
      * @var bool|null $nested A boolean which represents whether this attribute is embedded or not
      * An embedded attribute which describes a relationship between models will be represented as a nested object
      * which is a part of the parent object and is being saved together with the parent object
      */
-    public ?bool $nested;
+    public ?bool $nested = FALSE;
     /**
      * @var mixed $value An object which represents the default value of this attribute
      */
@@ -85,20 +81,8 @@ class DataField extends stdClass
      * @var ?DataAssociationMapping $mapping A DataAssociationMapping object which represents the mapping of this attribute
      * A mapping is used to define the relationship between two models e.g. User has many Articles, Article belongs to User etc
      */
-    protected ?DataAssociationMapping $mapping;
+    public ?DataAssociationMapping $mapping;
 
-    /**
-     * @return DataAssociationMapping
-     */
-    public function getMapping(): DataAssociationMapping
-    {
-        return $this->mapping;
-    }
-
-    /**
-     * @param DataAssociationMapping $mapping
-     * @return void
-     */
     public function setMapping(DataAssociationMapping $mapping): void
     {
         $this->mapping = $mapping;
@@ -109,25 +93,4 @@ class DataField extends stdClass
      * A validation is used to define the rules for validating the value of this attribute e.g. minValue, maxValue etc
      */
     public ?DataFieldValidation $validation;
-
-    private ?string $model;
-
-    /**
-     * set the model that this field is inherited from
-     * @var string $model The name of the model that this field is inherited from
-     */
-    public function setInheritedFrom(string $model): void
-    {
-        $this->model = $model;
-    }
-
-    /**
-     * get the model that this field is inherited from
-     * @return string|null
-     */
-    public function isInheritedFrom(): ?string
-    {
-        return $this->model;
-    }
-
 }

@@ -6,17 +6,12 @@ use ArrayAccess;
 use ArrayIterator;
 use Countable;
 use IteratorAggregate;
-use PHPCentroid\Serializer\Attributes\JsonArray;
-use PHPCentroid\Serializer\Attributes\JsonArrayItem;
 
 /**
  * Class DataFieldCollection
  * @package PHPCentroid\Data
  */
-#[JsonArray]
-#[JsonArrayItem(DataField::class)]
 class DataFieldCollection implements IteratorAggregate, Countable, ArrayAccess {
-
     /**
      * @var DataField[]
      */
@@ -67,10 +62,6 @@ class DataFieldCollection implements IteratorAggregate, Countable, ArrayAccess {
 
     public function offsetSet(mixed $offset, mixed $value): void
     {
-        if ($offset === null) {
-            $this->items[] = $value;
-            return;
-        }
         $this->items[$offset] = $value;
     }
 

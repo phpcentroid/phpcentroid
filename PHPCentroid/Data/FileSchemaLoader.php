@@ -3,21 +3,31 @@
 namespace PHPCentroid\Data;
 
 use PHPCentroid\Common\TextUtils;
-use PHPCentroid\Serializer\JsonSerializer;
+use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
+use Symfony\Component\Serializer\Encoder\JsonEncoder;
+use Symfony\Component\Serializer\Normalizer\ArrayDenormalizer;
+use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
+use Symfony\Component\Serializer\Attribute\SerializedPath;
 
 class FileSchemaLoader extends SchemaLoader
 {
 
     protected string $rootDir;
-    private JsonSerializer $serializer;
+    private Serializer $serializer;
 
     public function __construct(DataApplication $application)
     {
         parent::__construct($application);
         // set root directory
         $this->rootDir =  TextUtils::join_path( $application->cwd, 'config', 'models');
-        $this->serializer = new JsonSerializer();
+        $this->serializer = new Serializer([
+            new ArrayDenormalizer(),
+            new DataFieldCollectionNormalizer(),
+            new ObjectNormalizer(null, null, null, new ReflectionExtractor()),
+        ], [
+            new JsonEncoder()
+        ]);
     }
 
     protected function read(): void {
@@ -28,7 +38,7 @@ class FileSchemaLoader extends SchemaLoader
                 /**
                  * @var DataModelProperties $schema
                  */
-                $schema = $this->serializer->deserialize(json_decode($string, true), DataModelProperties::class, 'json');
+                $schema = $this->serializer->deserialize($string, DataModelProperties::class, 'json');
                 $this->set($schema);
             }
         }
