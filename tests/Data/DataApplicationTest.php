@@ -1,6 +1,6 @@
 <?php
 
-namespace Data;
+namespace PHPCentroid\Tests\Data;
 
 class ApplicationService1 extends \PHPCentroid\Common\ApplicationService {
 

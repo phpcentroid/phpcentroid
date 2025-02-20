@@ -3,6 +3,7 @@
 namespace PHPCentroid\Data;
 
 use stdClass;
+use PHPCentroid\Serializer\JsonArray;
 
 class DataModelProperties extends stdClass
 {
@@ -53,27 +54,26 @@ class DataModelProperties extends stdClass
     /**
      * @var DataModelConstraint[] An array of strings which represents the constraints of this model
      */
+    #[JsonArray(DataModelConstraint::class)]
     public array $constraints = [];
     /**
-     * @var DataObjectPrivilege[] An array of DataObjectPrivilege objects which represents the privileges of this model
+     * @var DataObjectPrivilege[]
+     * An array of DataObjectPrivilege objects which represents the privileges of this model
      */
+    #[JsonArray(DataObjectPrivilege::class)]
     public array $privileges = [];
     public array $views = [];
 
     /**
-     * @var DataFieldCollection<DataField>
+     * @var DataFieldCollection
      */
+    #[JsonArray(DataField::class)]
     public DataFieldCollection $fields;
-
-    public function setFields(DataField  ...$fields): void {
-        $this->fields = new DataFieldCollection(...$fields);
-    }
 
 //    /**
 //     * @var DataField[] An array of DataField objects which represents the fields of this model
 //     */
 //    protected array $fields = [];
-//
 //
 //    /**
 //     * @return DataField[]

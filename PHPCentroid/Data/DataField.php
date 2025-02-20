@@ -2,7 +2,9 @@
 
 namespace PHPCentroid\Data;
 
-class DataField extends \stdClass
+use stdClass;
+
+class DataField extends stdClass
 {
     /**
      * @var string $name A string which represents the name of this attribute e.g. title, description, dateCreated etc
@@ -51,7 +53,7 @@ class DataField extends \stdClass
     /**
      * @var ?bool $many A boolean which represents whether this attribute is a collection or not
      */
-    public ?bool $many = TRUE;
+    public ?bool $many = FALSE;
     /**
      * @var string $multiplicity A string which represents the multiplicity of this attribute e.g. OneToOne, OneToMany, ManyToOne, ManyToMany or ZeroOrOne etc
      */
@@ -80,6 +82,12 @@ class DataField extends \stdClass
      * A mapping is used to define the relationship between two models e.g. User has many Articles, Article belongs to User etc
      */
     public ?DataAssociationMapping $mapping;
+
+    public function setMapping(DataAssociationMapping $mapping): void
+    {
+        $this->mapping = $mapping;
+    }
+
     /**
      * @var ?DataFieldValidation $validation A DataFieldValidation object which represents the validation of this attribute
      * A validation is used to define the rules for validating the value of this attribute e.g. minValue, maxValue etc

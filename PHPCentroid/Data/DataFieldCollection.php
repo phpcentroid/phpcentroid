@@ -7,9 +7,13 @@ use ArrayIterator;
 use Countable;
 use IteratorAggregate;
 
+/**
+ * Class DataFieldCollection
+ * @package PHPCentroid\Data
+ */
 class DataFieldCollection implements IteratorAggregate, Countable, ArrayAccess {
     /**
-     * @var DataField[] $items
+     * @var DataField[]
      */
     protected array $items = [];
 

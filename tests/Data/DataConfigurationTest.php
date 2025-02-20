@@ -1,6 +1,6 @@
 <?php
 
-namespace Data;
+namespace PHPCentroid\Tests\Data;
 
 use PHPCentroid\Data\DataConfiguration;
 use PHPUnit\Framework\TestCase;

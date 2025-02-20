@@ -6,9 +6,12 @@ use phpDocumentor\Reflection\Types\ClassString;
 
 class JsonArrayItem
 {
-    public ClassString $type;
+    public string $type;
 
-    public function __construct(ClassString $type)
+    /**
+     * @param class-string $type
+     */
+    public function __construct(string $type)
     {
         $this->type = $type;
     }

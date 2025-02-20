@@ -8,6 +8,7 @@ use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\ArrayDenormalizer;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
+use Symfony\Component\Serializer\Attribute\SerializedPath;
 
 class FileSchemaLoader extends SchemaLoader
 {
@@ -22,6 +23,7 @@ class FileSchemaLoader extends SchemaLoader
         $this->rootDir =  TextUtils::join_path( $application->cwd, 'config', 'models');
         $this->serializer = new Serializer([
             new ArrayDenormalizer(),
+            new DataFieldCollectionNormalizer(),
             new ObjectNormalizer(null, null, null, new ReflectionExtractor()),
         ], [
             new JsonEncoder()

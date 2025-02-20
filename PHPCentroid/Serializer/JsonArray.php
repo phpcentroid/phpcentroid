@@ -4,11 +4,14 @@ namespace PHPCentroid\Serializer;
 
 use phpDocumentor\Reflection\Types\ClassString;
 
-class JsonArray
+#[\Attribute] class JsonArray
 {
-    public ClassString $type;
+    public string $type;
 
-    public function __construct(ClassString $type)
+    /**
+     * @param class-string $type
+     */
+    public function __construct(string $type)
     {
         $this->type = $type;
     }

@@ -1,32 +1,10 @@
 <?php
 
-namespace Serializer;
+namespace PHPCentroid\Tests\Serializer;
 
 use PHPCentroid\Serializer\JsonSerializer;
 use PHPUnit\Framework\TestCase;
 use ReflectionException;
-
-
-/**
- * @property string $name
- * @property int $age
- * @property string $city
- */
-class Person
-{
-
-    /**
-     * @param string $name
-     * @param int $age
-     * @param string $city
-     */
-    public function __construct(string $name, int $age, string $city)
-    {
-        $this->name = $name;
-        $this->age = $age;
-        $this->city = $city;
-    }
-}
 
 class JsonSerializerTest extends TestCase
 {
@@ -48,5 +26,25 @@ class JsonSerializerTest extends TestCase
         $jsonSerializer = new JsonSerializer();
         $str = $jsonSerializer->serialize((object)array('name' => 'John', 'age' => 30, 'city' => 'New York'));
         $this->assertEquals('{"name":"John","age":30,"city":"New York"}', $str);
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    public function testSerializeArrayAsObject()
+    {
+        $jsonSerializer = new JsonSerializer();
+        $str = $jsonSerializer->serialize(array('name' => 'John', 'age' => 30, 'city' => 'New York'));
+        $this->assertEquals('{"name":"John","age":30,"city":"New York"}', $str);
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    public function testSerializeArrayOfItems()
+    {
+        $jsonSerializer = new JsonSerializer();
+        $str = $jsonSerializer->serialize(array(new Person('John', 30, 'New York'), new Person('Jane', 25, 'Los Angeles')));
+        $this->assertEquals('[{"name":"John","age":30,"city":"New York"},{"name":"Jane","age":25,"city":"Los Angeles"}]', $str);
     }
 }

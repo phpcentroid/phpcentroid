@@ -12,6 +12,9 @@
   "autoload": {
     "psr-4": { "PHPCentroid\\": "PHPCentroid/"}
   },
+  "autoload-dev": {
+    "psr-4": { "PHPCentroid\\Tests\\": "tests/"}
+  },
   "require-dev": {
     "phpunit/phpunit": "10.5.x-dev"
   },

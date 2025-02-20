@@ -1,6 +1,6 @@
 <?php
 
-namespace Common;
+namespace PHPCentroid\Tests\Common;
 
 use Exception;
 use PHPCentroid\Common\Application;

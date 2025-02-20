@@ -2,48 +2,84 @@
 
 namespace PHPCentroid\Serializer;
 
-use phpDocumentor\Reflection\Types\ClassString;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionProperty;
+use stdClass;
 
 class JsonSerializer
 {
+
     public function __construct() {
-        //
+
     }
 
     /**
      * @throws ReflectionException
      */
-    public function serialize($object): ?string
+    public function serialize($object): ?string {
+        $arr = $this->serializeAny($object);
+        return json_encode($arr);
+    }
+    /**
+     * @throws ReflectionException
+     */
+    protected function serializeAny(mixed $value): mixed
     {
-        $reflectionClass = new ReflectionClass($object);
-        $json = array();
-        $properties = $reflectionClass->getProperties(ReflectionProperty::IS_PUBLIC);
-        if ($reflectionClass->name === 'stdClass') {
-            $vars = get_object_vars($object);
-            $props = [];
-            foreach ($vars as $key => $value) {
-                $props[] = new ReflectionProperty($object, $key);
-            }
-            $properties = array_merge($properties, $props);
+        if (is_null($value)) {
+            return null;
         }
+        if (is_scalar($value)) {
+            return $value;
+        }
+        if (is_array($value)) {
+            return array_map(function ($val) {
+                return $this->serializeAny($val);
+            }, $value);
+        }
+        $reflectionClass = new ReflectionClass($value);
+        $arr = array();
+        $properties = $reflectionClass->getProperties(ReflectionProperty::IS_PUBLIC);
+
+        if ($value instanceof stdClass) {
+            $vars = get_object_vars($value);
+            foreach ($vars as $key => $var) {
+                if ($properties[$key] == NULL) {
+                    $properties[] = new ReflectionProperty($value, $key);
+                }
+            }
+        }
+        $annotatedClass = new AnnotatedClass($value);
+        $extraProperties = $annotatedClass->getProperties();
+        foreach ($extraProperties as $property) {
+            $name = $property->getName();
+            $exists = current(array_filter($properties, function ($prop) use($name){
+                return $prop->getName() == $name;
+            }));
+            if ($exists === FALSE) {
+                $properties[] = $property;
+            }
+        }
+
         foreach ($properties as $property) {
             // Check if the property is ignored
-            $ignored = current($property->getAttributes(JsonIgnore::class));
-            if ($ignored) {
+            $attributes = $property->getAttributes();
+            $jsonIgnore = current(array_filter($attributes, function($attr) {
+                return $attr instanceof JsonIgnore;
+            }));
+            if ($jsonIgnore) {
                 continue;
             }
-            // Check if the property has a JsonProperty attribute
-            $jsonProperty = current($property->getAttributes(JsonProperty::class));
+            $jsonProperty = current(array_filter($attributes, function($attr) {
+                return $attr instanceof JsonProperty;
+            }));
             // Get the property name
             $propertyName = $jsonProperty ? $jsonProperty->name : $property->getName();
-            // insert the property into the json array
-            $json[$propertyName] = $property->getValue($object);
+            // insert the property into the arr array
+            $arr[$propertyName] = $this->serializeAny($property->getValue($value));
         }
-        // finally, return the json array as a string
-        return json_encode($json);
+        // finally, return the arr array as a string
+        return $arr;
     }
 
 }

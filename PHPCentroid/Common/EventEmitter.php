@@ -29,7 +29,7 @@ class EventEmitter implements iEventEmitter
      */
     public function emit($event): void {
         foreach ($this->subscriptions as $subscription) {
-            $subscription->callback($event);
+            $subscription->callback->call($this, $event);
         }
     }
 

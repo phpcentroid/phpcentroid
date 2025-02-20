@@ -4,8 +4,8 @@ namespace PHPCentroid\Common;
 
 class EventSubscription implements iEventSubscription
 {
-    private iEventEmitter $emitter;
-    private \Closure $callback;
+    public iEventEmitter $emitter;
+    public \Closure $callback;
 
     public function __construct(iEventEmitter $emitter, \Closure $callback)
     {
