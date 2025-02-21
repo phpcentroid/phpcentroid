@@ -6,13 +6,13 @@ use phpDocumentor\Reflection\Types\ClassString;
 
 #[\Attribute] class JsonArray
 {
-    public string $type;
+    private string $name;
 
     /**
-     * @param class-string $type
+     * @param ?string $name
      */
-    public function __construct(string $type)
+    public function __construct(string $name = NULL)
     {
-        $this->type = $type;
+        $this->name = $name;
     }
 }

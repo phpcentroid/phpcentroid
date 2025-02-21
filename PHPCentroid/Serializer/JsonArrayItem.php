@@ -6,7 +6,7 @@ use phpDocumentor\Reflection\Types\ClassString;
 
 #[\Attribute] class JsonArrayItem
 {
-    public string $type;
+    private string $type;
 
     /**
      * @param class-string $type
@@ -15,4 +15,9 @@ use phpDocumentor\Reflection\Types\ClassString;
     {
         $this->type = $type;
     }
+
+    public function getType(): string {
+        return $this->type;
+    }
+
 }

@@ -51,22 +51,38 @@ class JsonSerializer
             }
         }
         foreach ($properties as $property) {
-            $attributes = $property->getAttributes();
-            $jsonIgnore = current(array_filter($attributes, function($attr) {
-                return $attr instanceof JsonIgnore;
-            }));
+            $jsonIgnore = current($property->getAttributes(JsonIgnore::class));
             if ($jsonIgnore) {
                 continue;
             }
-            $jsonProperty = current(array_filter($attributes, function($attr) {
-                return $attr instanceof JsonProperty;
-            }));
+            $jsonProperty = current($property->getAttributes(JsonProperty::class));
             $propertyName = $jsonProperty ? $jsonProperty->name : $property->getName();
             if (array_key_exists($propertyName, $any)) {
-                $type = $property->getType();
+                // get the type of the property
+                $type = $property->getType()->getName();
+                // check if the class exists
                 $classExists = class_exists($type);
+                // get the value of the property
                 $value = $any[$propertyName];
-                $property->setValue($object, $this->deserializeAny($value, $classExists ? new ReflectionClass($type) : NULL));
+                // Check if the property is an array of specific items
+                $jsonArrayItem = current($property->getAttributes(JsonArrayItem::class));
+                if ($jsonArrayItem) {
+                    // get the type of the array items
+                    $arrayItemType = $jsonArrayItem->newInstance()->getType();
+                    // check if property is a custom array type, otherwise use the default array type
+                    $arr = class_exists($type) ? (new ReflectionClass($type))->newInstance() : array();
+                    // iterate over the array items and deserialize them
+                    foreach ($value as $item) {
+                        $arr[] = $this->deserializeAny($item, class_exists($arrayItemType) ? new ReflectionClass($arrayItemType) : NULL);
+                    }
+                    // set the array to the property
+                    $property->setValue($object, $arr);
+                    continue;
+                } else {
+                    $val = $this->deserializeAny($value, $classExists ? new ReflectionClass($type) : NULL);
+                    // set the value
+                    $property->setValue($object, $val);
+                }
             }
         }
         return $object;

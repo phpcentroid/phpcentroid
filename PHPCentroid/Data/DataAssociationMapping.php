@@ -2,6 +2,8 @@
 
 namespace PHPCentroid\Data;
 
+use PHPCentroid\Serializer\JsonArray;
+use PHPCentroid\Serializer\JsonArrayItem;
 use stdClass;
 
 class DataAssociationMapping extends stdClass
@@ -45,6 +47,8 @@ class DataAssociationMapping extends stdClass
     /**
      * @var DataObjectPrivilege[] $privileges A collection of DataObjectPrivilege objects which represents the privileges of this association
      */
+    #[JsonArray]
+    #[JsonArrayItem(DataObjectPrivilege::class)]
     public array $privileges = [];
     /**
      * @var ?array $options An object which represents the options of this association

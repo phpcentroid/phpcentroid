@@ -2,6 +2,8 @@
 
 namespace PHPCentroid\Tests\Serializer;
 
+use PHPCentroid\Data\DataModel;
+use PHPCentroid\Data\DataModelProperties;
 use PHPCentroid\Serializer\JsonSerializer;
 use PHPUnit\Framework\TestCase;
 use ReflectionException;
@@ -62,5 +64,16 @@ class JsonSerializerTest extends TestCase
         $jsonSerializer = new JsonSerializer();
         $str = $jsonSerializer->serialize(array(new Person('John', 30, 'New York'), new Person('Jane', 25, 'Los Angeles')));
         $this->assertEquals('[{"name":"John","age":30,"city":"New York"},{"name":"Jane","age":25,"city":"Los Angeles"}]', $str);
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    public function testSerializeCustomCollection()
+    {
+        $jsonSerializer = new JsonSerializer();
+        $string = file_get_contents(realpath('..') . '/config/models/Thing.json');
+        $model = $jsonSerializer->deserialize($string, DataModelProperties::class);
+        $this->assertTrue($model instanceof DataModelProperties, '$model must be an install of DataModel class');
     }
 }
