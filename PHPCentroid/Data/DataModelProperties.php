@@ -67,7 +67,6 @@ class DataModelProperties extends stdClass
     /**
      * @var DataFieldCollection
      */
-    #[JsonArray(DataField::class)]
     public DataFieldCollection $fields;
 
 //    /**

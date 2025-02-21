@@ -81,8 +81,20 @@ class DataField extends stdClass
      * @var ?DataAssociationMapping $mapping A DataAssociationMapping object which represents the mapping of this attribute
      * A mapping is used to define the relationship between two models e.g. User has many Articles, Article belongs to User etc
      */
-    public ?DataAssociationMapping $mapping;
+    protected ?DataAssociationMapping $mapping;
 
+    /**
+     * @return DataAssociationMapping
+     */
+    public function getMapping(): DataAssociationMapping
+    {
+        return $this->mapping;
+    }
+
+    /**
+     * @param DataAssociationMapping $mapping
+     * @return void
+     */
     public function setMapping(DataAssociationMapping $mapping): void
     {
         $this->mapping = $mapping;

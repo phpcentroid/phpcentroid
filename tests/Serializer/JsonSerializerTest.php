@@ -15,8 +15,24 @@ class JsonSerializerTest extends TestCase
     public function testSerialize()
     {
         $jsonSerializer = new JsonSerializer();
-        $this->assertEquals('{"name":"John","age":30,"city":"New York"}', $jsonSerializer->serialize(new Person('John', 30, 'New York')));
+        $str = $jsonSerializer->serialize(new Person('John', 30, 'New York'));
+        $this->assertEquals('{"name":"John","age":30,"city":"New York"}', $str);
+        $person = $jsonSerializer->deserialize($str, Person::class);
+        $this->assertEquals('John', $person->name);
     }
+
+    /**
+     * @throws ReflectionException
+     */
+    public function testDeserialize()
+    {
+        $jsonSerializer = new JsonSerializer();
+        $str = '{"name":"John","age":30,"city":"New York"}';
+        $person = $jsonSerializer->deserialize($str, Person::class);
+        $this->assertEquals('John', $person->name);
+    }
+
+
 
     /**
      * @throws ReflectionException

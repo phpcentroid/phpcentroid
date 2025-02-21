@@ -11,7 +11,6 @@ class JsonSerializer
 {
 
     public function __construct() {
-
     }
 
     /**
@@ -21,6 +20,59 @@ class JsonSerializer
         $arr = $this->serializeAny($object);
         return json_encode($arr);
     }
+
+    /**
+     * @throws ReflectionException
+     */
+    public function deserialize(string $string, string $class): mixed {
+        return $this->deserializeAny(json_decode($string, TRUE), new ReflectionClass($class));
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    protected function deserializeAny(mixed $any, ?ReflectionClass $reflectionClass = NULL): mixed
+    {
+        if ($reflectionClass == NULL) {
+            return $any;
+        }
+        $object = $reflectionClass->newInstance();
+        $properties = $reflectionClass->getProperties(ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED | ReflectionProperty::IS_PRIVATE);
+        // get annotated properties
+        $annotatedClass = new AnnotatedClass($object);
+        $extraProperties = $annotatedClass->getProperties();
+        foreach ($extraProperties as $property) {
+            $name = $property->getName();
+            $exists = current(array_filter($properties, function ($prop) use($name){
+                return $prop->getName() == $name;
+            }));
+            if ($exists === FALSE) {
+                $properties[] = $property;
+            }
+        }
+        foreach ($properties as $property) {
+            $attributes = $property->getAttributes();
+            $jsonIgnore = current(array_filter($attributes, function($attr) {
+                return $attr instanceof JsonIgnore;
+            }));
+            if ($jsonIgnore) {
+                continue;
+            }
+            $jsonProperty = current(array_filter($attributes, function($attr) {
+                return $attr instanceof JsonProperty;
+            }));
+            $propertyName = $jsonProperty ? $jsonProperty->name : $property->getName();
+            if (array_key_exists($propertyName, $any)) {
+                $type = $property->getType();
+                $classExists = class_exists($type);
+                $value = $any[$propertyName];
+                $property->setValue($object, $this->deserializeAny($value, $classExists ? new ReflectionClass($type) : NULL));
+            }
+        }
+        return $object;
+
+    }
+
     /**
      * @throws ReflectionException
      */

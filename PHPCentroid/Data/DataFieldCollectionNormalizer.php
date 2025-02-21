@@ -2,7 +2,6 @@
 
 namespace PHPCentroid\Data;
 
-use Symfony\Component\Serializer\Normalizer\ArrayDenormalizer;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
@@ -20,7 +19,7 @@ class DataFieldCollectionNormalizer implements NormalizerInterface, Denormalizer
             throw new UnexpectedValueException('The object must be an instance of DataFieldCollection.');
         }
         $data = [];
-        $fieldNormalizer = new ObjectNormalizer();
+        $fieldNormalizer = new PropertyNormalizer();
         foreach ($object as $item) {
             $data[] = $fieldNormalizer->normalize($item, $format, $context);
         }

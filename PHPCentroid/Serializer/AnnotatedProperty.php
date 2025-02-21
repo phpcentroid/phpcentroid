@@ -6,6 +6,7 @@ class AnnotatedProperty
 {
     public string $class;
     private string $name;
+    private string $type;
 
     public function __construct(string $class, string $name)
     {
@@ -25,8 +26,26 @@ class AnnotatedProperty
         ];
     }
 
+    public function getType(): string
+    {
+        return $this->type;
+    }
+
+    public function setType(string $type): void
+    {
+        $this->type = $type;
+    }
+
     public  function getValue(mixed $object) {
         return $object->{$this->name};
+    }
+
+    public  function setValue(mixed $object, mixed $value): void {
+        if (is_array($object)) {
+            $object[$this->name] = $value;
+            return;
+        }
+        $object->{$this->name} = $value;
     }
 
 }

@@ -6,6 +6,7 @@ use ArrayAccess;
 use ArrayIterator;
 use Countable;
 use IteratorAggregate;
+use PHPCentroid\Serializer\JsonArrayItem;
 
 /**
  * Class DataFieldCollection
@@ -15,6 +16,7 @@ class DataFieldCollection implements IteratorAggregate, Countable, ArrayAccess {
     /**
      * @var DataField[]
      */
+    #[JsonArrayItem(DataField::class)]
     protected array $items = [];
 
     function __construct(DataField ...$items) {

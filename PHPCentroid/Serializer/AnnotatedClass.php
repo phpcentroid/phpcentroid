@@ -43,6 +43,7 @@ class AnnotatedClass
                 continue;
             }
             $prop = new AnnotatedProperty($this->reflectionClass->getName(), $tag->getVariableName());
+            $prop->setType($tag->getType());
             $properties[] = $prop;
         }
         return $properties;

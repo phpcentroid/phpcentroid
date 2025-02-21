@@ -4,7 +4,7 @@ namespace PHPCentroid\Serializer;
 
 use phpDocumentor\Reflection\Types\ClassString;
 
-class JsonArrayItem
+#[\Attribute] class JsonArrayItem
 {
     public string $type;
 
