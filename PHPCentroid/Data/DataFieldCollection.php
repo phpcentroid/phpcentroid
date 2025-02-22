@@ -16,6 +16,7 @@ use PHPCentroid\Serializer\Attributes\JsonArrayItem;
 #[JsonArray]
 #[JsonArrayItem(DataField::class)]
 class DataFieldCollection implements IteratorAggregate, Countable, ArrayAccess {
+
     /**
      * @var DataField[]
      */
