@@ -2,8 +2,9 @@
 
 namespace PHPCentroid\Data;
 
+use PHPCentroid\Serializer\Attributes\JsonArray;
+use PHPCentroid\Serializer\Attributes\JsonArrayItem;
 use stdClass;
-use PHPCentroid\Serializer\JsonArray;
 
 class DataModelProperties extends stdClass
 {
@@ -54,46 +55,23 @@ class DataModelProperties extends stdClass
     /**
      * @var DataModelConstraint[] An array of strings which represents the constraints of this model
      */
-    #[JsonArray(DataModelConstraint::class)]
+    #[JsonArray()]
+    #[JsonArrayItem(DataModelConstraint::class)]
     public array $constraints = [];
     /**
      * @var DataObjectPrivilege[]
      * An array of DataObjectPrivilege objects which represents the privileges of this model
      */
-    #[JsonArray(DataObjectPrivilege::class)]
+    #[JsonArray()]
+    #[JsonArrayItem(DataObjectPrivilege::class)]
     public array $privileges = [];
     public array $views = [];
 
     /**
      * @var DataFieldCollection
      */
-    #[JsonArray(DataField::class)]
+    #[JsonArray()]
+    #[JsonArrayItem(DataField::class)]
     public DataFieldCollection $fields;
-
-//    /**
-//     * @var DataField[] An array of DataField objects which represents the fields of this model
-//     */
-//    protected array $fields = [];
-//
-//    /**
-//     * @return DataField[]
-//     */
-//    public function getFields(): array
-//    {
-//        return $this->fields;
-//    }
-//
-//    public function addField(DataField $field): void
-//    {
-//        $this->fields[] = $field;
-//    }
-
-//    public function removeField(DataField $field): void
-//    {
-//        $index = array_search($field, $this->fields);
-//        if ($index >= 0) {
-//            array_splice($this->fields, $index, 1);
-//        }
-//    }
 
 }

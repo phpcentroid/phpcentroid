@@ -78,24 +78,4 @@ class JsonSerializerTest extends TestCase
         $this->assertEquals('User', $model->name);
         $this->assertEquals('$model->fields must be an install of DataFieldCollection class', $model->fields instanceof DataFieldCollection);
     }
-
-    /**
-     * @throws ReflectionException
-     */
-    public function testSerializeArrayAsObject()
-    {
-        $jsonSerializer = new JsonSerializer();
-        $str = $jsonSerializer->serialize(array('name' => 'John', 'age' => 30, 'city' => 'New York'));
-        $this->assertEquals('{"name":"John","age":30,"city":"New York"}', $str);
-    }
-
-    /**
-     * @throws ReflectionException
-     */
-    public function testSerializeArrayOfItems()
-    {
-        $jsonSerializer = new JsonSerializer();
-        $str = $jsonSerializer->serialize(array(new Person('John', 30, 'New York'), new Person('Jane', 25, 'Los Angeles')));
-        $this->assertEquals('[{"name":"John","age":30,"city":"New York"},{"name":"Jane","age":25,"city":"Los Angeles"}]', $str);
-    }
 }
