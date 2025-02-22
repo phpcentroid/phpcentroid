@@ -13,7 +13,7 @@ class DataModelTest extends TestCase
      */
     public function test_get_json_model()
     {
-        $app = new \PHPCentroid\Data\DataApplication(realpath('..'));
+        $app = new \PHPCentroid\Data\DataApplication(realpath(__DIR__ . DIRECTORY_SEPARATOR. '..'));
         $model = $app->getConfiguration()->getModel('Thing');
         $this->assertTrue($model instanceof DataModel, '$model must be an install of DataModel class');
         $this->assertTrue($model->properties->name == 'Thing', '$model->properties->name must be "Thing"');

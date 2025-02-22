@@ -14,7 +14,7 @@ class DataFieldCollectionTest extends TestCase
      */
     public function testSerializeCollection()
     {
-        $string = file_get_contents(realpath('..') . '/config/models/User.json');
+        $string = file_get_contents(realpath(__DIR__ . DIRECTORY_SEPARATOR. '..') . '/config/models/User.json');
         $json = json_decode($string, true);
         $stringFields = $json['fields'];
         $serializer = new JsonSerializer();

@@ -72,7 +72,7 @@ class JsonSerializerTest extends TestCase
     public function testSerializeCustomCollection()
     {
         $jsonSerializer = new JsonSerializer();
-        $string = file_get_contents(realpath('..') . '/config/models/User.json');
+        $string = file_get_contents(realpath(__DIR__ . DIRECTORY_SEPARATOR. '..') . '/config/models/User.json');
         $model = $jsonSerializer->deserialize(json_decode($string, true), DataModelProperties::class);
         $this->assertTrue($model instanceof DataModelProperties, '$model must be an install of DataModel class');
         $this->assertEquals('User', $model->name);

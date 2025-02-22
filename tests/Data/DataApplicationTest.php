@@ -32,7 +32,7 @@ class DataApplicationTest extends TestCase
 
     public function testCreateContext()
     {
-        $application = new DataApplication(realpath('..'));
+        $application = new DataApplication(realpath(__DIR__ . DIRECTORY_SEPARATOR. '..'));
         $context = $application->createContext();
         $model = $context->getModel('Thing');
         $this->assertTrue($model instanceof DataModel, 'Expected DataModel');
