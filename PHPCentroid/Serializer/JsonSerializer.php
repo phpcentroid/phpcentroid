@@ -12,6 +12,7 @@ use ReflectionException;
 use ReflectionProperty;
 use stdClass;
 
+
 class JsonSerializer implements SerializerContextInterface, SerializerInterface, DeserializerInterface
 {
     private array $serializers;
