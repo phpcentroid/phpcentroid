@@ -24,12 +24,12 @@ class DataModel implements DataModelBase
     public readonly EventEmitter $afterExecute;
     public readonly EventEmitter $afterUpgrade;
 
-    public readonly object $properties;
+    public readonly DataModelProperties $properties;
 
     private DataFieldCollection $attributes;
     private DataContext $context;
 
-    public function __construct(object $schema) {
+    public function __construct(DataModelProperties $schema) {
 
         $this->properties = $schema;
 
@@ -60,7 +60,7 @@ class DataModel implements DataModelBase
                     $field->setInheritedFrom($this->properties->inherits);
                     // add field to attributes
                     $this->attributes->add($field);
-                };
+                }
             }
             // add fields
             foreach ($this->properties->fields as $field) {
@@ -83,5 +83,10 @@ class DataModel implements DataModelBase
     public function setContext(DataContextBase $context): void
     {
         $this->context = $context;
+    }
+
+    public function getSchema(): DataModelProperties
+    {
+        return $this->properties;
     }
 }
