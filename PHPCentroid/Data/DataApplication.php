@@ -29,5 +29,12 @@ class DataApplication extends Application
         return $this->services->get(DataConfiguration::class);
     }
 
+    public function createContext(): DataContextBase
+    {
+        $context = new DataContext();
+        $context->setApplication($this);
+        return $context;
+    }
+
 
 }

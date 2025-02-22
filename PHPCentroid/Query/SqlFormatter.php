@@ -298,7 +298,7 @@ class SqlFormatter implements iExpressionFormatter
             return $this->format($x).' AS '.$this->escape_name($x->alias);
         };
         $from = $this->format($entity);
-        $select = implode(array_map($map, $expression->params['select']), ', ');
+        $select = implode(', ', array_map($map, $expression->params['select']));
         if ($expression->params['fixed']) {
             return "SELECT * FROM (SELECT $select) $from";
         }

@@ -21,6 +21,7 @@
   "require": {
     "ext-json": "*",
     "lodash-php/lodash-php": "dev-master",
-    "symfony/serializer-pack": "dev-main"
+    "symfony/serializer-pack": "dev-main",
+    "mmucklo/inflect": "dev-master"
   }
 }

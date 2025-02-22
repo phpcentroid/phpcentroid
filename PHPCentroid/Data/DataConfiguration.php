@@ -2,7 +2,6 @@
 namespace PHPCentroid\Data;
 
 use PHPCentroid\Common\ApplicationService;
-use PHPCentroid\Common\TextUtils;
 
 class DataConfiguration extends ApplicationService
 {

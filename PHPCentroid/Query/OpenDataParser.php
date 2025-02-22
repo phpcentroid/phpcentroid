@@ -152,7 +152,8 @@ class OpenDataParser
         return $this->offset>=count($this->tokens);
     }
 
-    private function move_next() {
+    private function move_next(): void
+    {
         $this->offset++;
     }
 
@@ -160,7 +161,8 @@ class OpenDataParser
      * @param ?Token $token
      * @throws Error
      */
-    private function expect(?Token $token) {
+    private function expect(?Token $token): void
+    {
         Args::not_null($token,'Token');
         Args::check($token instanceof Token,'Invalid argument. Expected Token');
         if ($this->get_current_token()->value_of() != $token->value_of())
@@ -350,8 +352,7 @@ class OpenDataParser
     }
 
     /**
-     * @param ?string $value
-     * @return ?LiteralToken
+     * @throws \DateMalformedStringException
      */
     private function parse_datetime_string(?string $value): ?LiteralToken
     {

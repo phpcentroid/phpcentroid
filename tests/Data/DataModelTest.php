@@ -2,6 +2,7 @@
 
 namespace PHPCentroid\Tests\Data;
 
+use Exception;
 use PHPCentroid\Data\DataModel;
 use PHPUnit\Framework\TestCase;
 
