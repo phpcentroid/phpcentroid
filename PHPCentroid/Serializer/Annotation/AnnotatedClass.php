@@ -1,11 +1,11 @@
 <?php
 
-namespace PHPCentroid\Serializer;
+namespace PHPCentroid\Serializer\Annotation;
 
 use phpDocumentor\Reflection\DocBlock\Tags\Property;
+use phpDocumentor\Reflection\DocBlockFactory;
 use ReflectionClass;
 use ReflectionException;
-use phpDocumentor\Reflection\DocBlockFactory;
 
 
 class AnnotatedClass

@@ -1,6 +1,8 @@
 <?php
 
-namespace PHPCentroid\Serializer;
+namespace PHPCentroid\Serializer\Annotation;
+
+use ReflectionNamedType;
 
 class AnnotatedProperty
 {
@@ -21,14 +23,12 @@ class AnnotatedProperty
 
     public function getAttributes(): array
     {
-        return [
-            new JsonProperty($this->name)
-        ];
+        return [];
     }
 
-    public function getType(): string
+    public function getType(): ReflectionNamedType
     {
-        return $this->type;
+        return new AnnotatedNamedType($this->type);
     }
 
     public function setType(string $type): void

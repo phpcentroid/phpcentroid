@@ -1,6 +1,6 @@
 <?php
 
-namespace PHPCentroid\Serializer;
+namespace PHPCentroid\Serializer\Attributes;
 
 class JsonIgnore
 {

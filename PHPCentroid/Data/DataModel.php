@@ -1,6 +1,5 @@
 <?php
 namespace PHPCentroid\Data;
-use PHPCentroid\Common\DynamicObject;
 use PHPCentroid\Common\EventEmitter;
 
 /**
@@ -27,6 +26,8 @@ class DataModel
 
     public readonly object $properties;
 
+    private array $attributes;
+
     public function __construct(object $schema) {
 
         $this->properties = $schema;
@@ -40,6 +41,19 @@ class DataModel
         $this->afterRemove = new EventEmitter();
         $this->afterExecute = new EventEmitter();
         $this->afterUpgrade = new EventEmitter();
+    }
+
+    /**
+     * @return DataField[]
+     */
+    public function getAttributes(): array {
+        if (!isset($this->attributes)) {
+            $this->attributes = [];
+            foreach ($this->properties->fields as $field) {
+                $this->attributes[] = $field;
+            }
+        }
+        return $this->attributes;
     }
 
 }

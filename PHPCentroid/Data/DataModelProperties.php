@@ -2,8 +2,8 @@
 
 namespace PHPCentroid\Data;
 
-use PHPCentroid\Serializer\JsonArray;
-use PHPCentroid\Serializer\JsonArrayItem;
+use PHPCentroid\Serializer\Attributes\JsonArray;
+use PHPCentroid\Serializer\Attributes\JsonArrayItem;
 use stdClass;
 
 class DataModelProperties extends stdClass

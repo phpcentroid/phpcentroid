@@ -11,6 +11,10 @@ class DataField extends stdClass
      */
     public string $name;
     /**
+     * @var string $property A string which represents the name of the property of this attribute e.g. title, description, dateCreated etc
+     */
+    public string $property;
+    /**
      * @var string $type A string which represents the type of this attribute e.g. Text, Number, Boolean etc
      */
     public string $type;

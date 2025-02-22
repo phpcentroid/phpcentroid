@@ -6,13 +6,15 @@ use ArrayAccess;
 use ArrayIterator;
 use Countable;
 use IteratorAggregate;
-use PHPCentroid\Serializer\JsonArray;
-use PHPCentroid\Serializer\JsonArrayItem;
+use PHPCentroid\Serializer\Attributes\JsonArray;
+use PHPCentroid\Serializer\Attributes\JsonArrayItem;
 
 /**
  * Class DataFieldCollection
  * @package PHPCentroid\Data
  */
+#[JsonArray]
+#[JsonArrayItem(DataField::class)]
 class DataFieldCollection implements IteratorAggregate, Countable, ArrayAccess {
     /**
      * @var DataField[]

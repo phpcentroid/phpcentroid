@@ -7,7 +7,7 @@ use stdClass;
 class ObjectSerializer  implements SerializerInterface, DeserializerInterface
 {
 
-    public function deserialize(array $data, ?string $class = NULL): mixed
+    public function deserialize(array $input, ?string $class = NULL): mixed
     {
         return NULL;
     }

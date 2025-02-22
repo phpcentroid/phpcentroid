@@ -1,10 +1,11 @@
 <?php
 
-namespace PHPCentroid\Serializer;
+namespace PHPCentroid\Serializer\Attributes;
 
-use phpDocumentor\Reflection\Types\ClassString;
 
-#[\Attribute] class JsonArrayItem
+use Attribute;
+
+#[Attribute] class JsonArrayItem
 {
     private string $type;
 
