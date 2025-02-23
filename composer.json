@@ -22,6 +22,7 @@
     "ext-json": "*",
     "lodash-php/lodash-php": "dev-master",
     "symfony/serializer-pack": "dev-main",
-    "mmucklo/inflect": "dev-master"
+    "mmucklo/inflect": "dev-master",
+    "ext-sqlite3": "*"
   }
 }
