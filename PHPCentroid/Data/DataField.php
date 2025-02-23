@@ -2,6 +2,7 @@
 
 namespace PHPCentroid\Data;
 
+use PHPCentroid\Serializer\Attributes\JsonIgnore;
 use stdClass;
 
 class DataField extends stdClass
@@ -110,6 +111,7 @@ class DataField extends stdClass
      */
     public ?DataFieldValidation $validation;
 
+    #[JsonIgnore]
     private ?string $model;
 
     /**

@@ -2,7 +2,9 @@
 
 namespace PHPCentroid\Serializer\Attributes;
 
-class JsonIgnore
+use Attribute;
+
+#[Attribute] class JsonIgnore
 {
     public function __construct()
     {

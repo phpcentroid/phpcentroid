@@ -1,10 +1,5 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: kbarbounakis
- * Date: 19/10/2016
- * Time: 7:05 πμ
- */
+
 namespace PHPCentroid\Query;
 
 interface iQueryable
@@ -13,13 +8,13 @@ interface iQueryable
      * @param string|SelectableExpression $arg,...
      * @return $this
      */
-    public function select($arg): self;
+    public function select(mixed $arg): self;
 
     /**
      * @param string|SelectableExpression $arg,...
      * @return $this
      */
-    public function also_select($arg): self;
+    public function alsoSelect(mixed $arg): self;
 
     public function has_fields();
 
@@ -29,49 +24,49 @@ interface iQueryable
      * @param SelectableExpression|string $expr,...
      * @return $this
      */
-    public function group_by($expr): self;
+    public function groupBy(mixed $expr): self;
 
     /**
      * @param SelectableExpression|string $expr,...
      * @return $this
      */
-    public function order_by($expr): self;
+    public function orderBy(mixed $expr): self;
 
     /**
      * @param SelectableExpression|string $expr,...
      * @return $this
      */
-    public function then_by($expr): self;
+    public function thenBy(mixed $expr): self;
 
     /**
      * @param SelectableExpression|string $expr,...
      * @return $this
      */
-    public function order_by_descending($expr): self;
+    public function orderByDescending(mixed $expr): self;
 
     /**
      * @param SelectableExpression|string $expr,...
      * @return $this
      */
-    public function then_by_descending($expr): self;
+    public function thenByDescending(mixed $expr): self;
 
     /**
      * @param mixed $arg
      * @return $this
      */
-    public function where($arg): self;
+    public function where(mixed $arg): self;
 
     /**
      * @param mixed $arg
      * @return $this
      */
-    public function also($arg): self;
+    public function also(mixed $arg): self;
 
     /**
      * @param mixed $arg
      * @return $this
      */
-    public function either($arg): self;
+    public function either(mixed $arg): self;
 
     public function prepare();
 
@@ -79,55 +74,55 @@ interface iQueryable
      * @param mixed $value
      * @return $this
      */
-    public function equal($value): self;
+    public function equal(mixed $value): self;
 
     /**
      * @param mixed $value
      * @return $this
      */
-    public function not_equal($value): self;
+    public function notEqual(mixed $value): self;
 
     /**
      * @param mixed $value
      * @return $this
      */
-    public function lower_than($value): self;
+    public function lowerThan(mixed $value): self;
 
     /**
      * @param mixed $value
      * @return $this
      */
-    public function lower_or_equal($value): self;
+    public function lowerOrEqual(mixed $value): self;
 
     /**
      * @param mixed $value
      * @return $this
      */
-    public function greater_than($value): self;
+    public function greaterThan(mixed $value): self;
 
     /**
      * @param mixed $value
      * @return $this
      */
-    public function greater_or_equal($value): self;
+    public function greaterOrEqual(mixed $value): self;
 
-    public function get_day();
+    public function getDay();
 
-    public function get_month();
+    public function getMonth();
 
-    public function get_year();
+    public function getYear();
 
-    public function get_seconds();
+    public function getSeconds();
 
-    public function get_minutes();
+    public function getMinutes();
 
-    public function get_hours();
+    public function getHours();
 
-    public function get_date();
+    public function getDate();
 
-    public function to_lower_case();
+    public function toLowerCase();
 
-    public function to_upper_case();
+    public function toUpperCase();
 
     public function floor();
 
@@ -143,36 +138,36 @@ interface iQueryable
      * @param mixed $x
      * @return $this
      */
-    public function add($x): self;
+    public function add(mixed $x): self;
 
     /**
      * @param mixed $x
      * @return $this
      */
-    public function subtract($x): self;
+    public function subtract(mixed $x): self;
 
     /**
      * @param mixed $x
      * @return $this
      */
-    public function multiply($x): self;
+    public function multiply(mixed $x): self;
 
     /**
      * @param mixed $x
      * @return $this
      */
-    public function divide($x): self;
+    public function divide(mixed$x): self;
 
     /**
      * @param mixed $x
      * @return $this
      */
-    public function mod($x): self;
+    public function mod(mixed $x): self;
 
     /**
      * @param mixed $x
      * @return $this
      */
-    public function bit($x): self;
+    public function bit(mixed $x): self;
 
 }

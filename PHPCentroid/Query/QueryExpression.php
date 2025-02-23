@@ -79,7 +79,7 @@ class QueryExpression implements iQueryable
      * @param string|SelectableExpression $arg,...
      * @return $this
      */
-    public function also_select($arg): iQueryable
+    public function alsoSelect($arg): iQueryable
     {
         $arguments = func_get_args();
         if (!array_key_exists('select', $this->params)) {
@@ -153,7 +153,7 @@ class QueryExpression implements iQueryable
      * @param SelectableExpression|string $expr,...
      * @return $this
      */
-    public function group_by($expr): iQueryable
+    public function groupBy($expr): iQueryable
     {
         $arguments = func_get_args();
         $this->params['groupby'] = new MemberListExpression(array());
@@ -174,7 +174,7 @@ class QueryExpression implements iQueryable
      * @param SelectableExpression|string $expr,...
      * @return $this
      */
-    public function order_by($expr): iQueryable {
+    public function orderBy($expr): iQueryable {
         $arguments = func_get_args();
         $this->params['orderby'] = new MemberListExpression(array());
         foreach ($arguments as $argument) {
@@ -194,7 +194,7 @@ class QueryExpression implements iQueryable
      * @param SelectableExpression|string $expr,...
      * @return $this
      */
-    public function then_by($expr): iQueryable {
+    public function thenBy($expr): iQueryable {
         Args::check(array_key_exists('orderby', $this->params), "Order expression has not been yet initialized.");
         $arguments = func_get_args();
         foreach ($arguments as $argument) {
@@ -215,7 +215,7 @@ class QueryExpression implements iQueryable
      * @param SelectableExpression|string $expr,...
      * @return $this
      */
-    public function order_by_descending($expr): iQueryable
+    public function orderByDescending($expr): iQueryable
     {
         $arguments = func_get_args();
         $this->params['orderby'] = new MemberListExpression(array());
@@ -237,7 +237,7 @@ class QueryExpression implements iQueryable
      * @param SelectableExpression|string $expr,...
      * @return $this
      */
-    public function then_by_descending($expr): iQueryable
+    public function thenByDescending($expr): iQueryable
     {
         Args::check(array_key_exists('orderby', $this->params), "Order expression has not been yet initialized.");
         $arguments = func_get_args();
@@ -421,7 +421,7 @@ class QueryExpression implements iQueryable
      * @param mixed $value
      * @return $this
      */
-    public function not_equal($value): iQueryable
+    public function notEqual($value): iQueryable
     {
         $this->__append_comparison(new ComparisonExpression($this->__left,  ComparisonExpression::OPERATOR_NOT_EQUAL, $value));
         $this->__left = NULL;
@@ -432,7 +432,7 @@ class QueryExpression implements iQueryable
      * @param mixed $value
      * @return $this
      */
-    public function lower_than($value): iQueryable
+    public function lowerThan($value): iQueryable
     {
         Args::check(!is_null($value), "The right operand may cannot be null");
         $this->__append_comparison(new ComparisonExpression($this->__left,  ComparisonExpression::OPERATOR_LOWER, $value));
@@ -444,7 +444,7 @@ class QueryExpression implements iQueryable
      * @param mixed $value
      * @return $this
      */
-    public function lower_or_equal($value): iQueryable
+    public function lowerOrEqual($value): iQueryable
     {
         Args::check(!is_null($value), "The right operand may cannot be null");
         $this->__append_comparison(new ComparisonExpression($this->__left,  ComparisonExpression::OPERATOR_LOWER_OR_EQUAL, $value));
@@ -456,7 +456,7 @@ class QueryExpression implements iQueryable
      * @param mixed $value
      * @return $this
      */
-    public function greater_than($value): iQueryable
+    public function greaterThan($value): iQueryable
     {
         Args::check(!is_null($value), "The right operand may cannot be null");
         $this->__append_comparison(new ComparisonExpression($this->__left,  ComparisonExpression::OPERATOR_GREATER, $value));
@@ -468,7 +468,7 @@ class QueryExpression implements iQueryable
      * @param mixed $value
      * @return $this
      */
-    public function greater_or_equal($value): iQueryable
+    public function greaterOrEqual($value): iQueryable
     {
         Args::check(!is_null($value), "The right operand may cannot be null");
         $this->__append_comparison(new ComparisonExpression($this->__left,  ComparisonExpression::OPERATOR_GREATER_OR_EQUAL, $value));
@@ -493,44 +493,44 @@ class QueryExpression implements iQueryable
         return $this;
     }
 
-    public function get_day(): QueryExpression
+    public function getDay(): QueryExpression
     {
         return $this->wrap_left_operand_with_method('day');
     }
 
-    public function get_month() {
+    public function getMonth() {
         return $this->wrap_left_operand_with_method('month');
     }
 
-    public function get_year() {
+    public function getYear() {
         return $this->wrap_left_operand_with_method('year');
     }
 
-    public function get_seconds() {
+    public function getSeconds() {
         return $this->wrap_left_operand_with_method('second');
     }
 
-    public function get_minutes(): QueryExpression
+    public function getMinutes(): QueryExpression
     {
         return $this->wrap_left_operand_with_method('minute');
     }
 
 
-    public function get_hours(): QueryExpression
+    public function getHours(): QueryExpression
     {
         return $this->wrap_left_operand_with_method('hour');
     }
 
-    public function get_date(): QueryExpression
+    public function getDate(): QueryExpression
     {
         return $this->wrap_left_operand_with_method('date');
     }
 
-    public function to_lower_case() {
+    public function toLowerCase() {
         return $this->wrap_left_operand_with_method('tolower');
     }
 
-    public function to_upper_case() {
+    public function toUpperCase() {
         return $this->wrap_left_operand_with_method('toupper');
     }
 

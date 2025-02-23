@@ -65,7 +65,7 @@ class QueryExpressionTest extends TestCase
     {
         $q = new QueryExpression();
         $q->select("id", "givenName", "familyName")
-            ->also_select((new MemberExpression('dateCreated'))
+            ->alsoSelect((new MemberExpression('dateCreated'))
                 ->as('created'))
             ->from("Person");
         $formatter = new SqlFormatter();
@@ -76,9 +76,9 @@ class QueryExpressionTest extends TestCase
     {
         $q = new QueryExpression();
         $q->select('id', 'givenName', 'familyName')
-            ->also_select(MemberExpression::create('dateCreated')
+            ->alsoSelect(MemberExpression::create('dateCreated')
                 ->as('created'))
-            ->order_by('familyName', 'givenName')
+            ->orderBy('familyName', 'givenName')
             ->from('Person');
         $formatter = new SqlFormatter();
         var_dump($q);
@@ -89,7 +89,7 @@ class QueryExpressionTest extends TestCase
     {
         $q = new QueryExpression();
         $q->select(new CountExpression(new MemberExpression('id')), 'category')
-            ->group_by('category')
+            ->groupBy('category')
             ->from('Product');
         $formatter = new SqlFormatter();
         var_dump($q);
@@ -116,7 +116,7 @@ class QueryExpressionTest extends TestCase
             ->where('category')->equal('Laptop')
             ->either('category')->equal('Desktop')
             ->prepare()
-            ->where('price')->lower_than(500)
+            ->where('price')->lowerThan(500)
             ->from('Product');
         $formatter = new SqlFormatter();
         var_dump($q);

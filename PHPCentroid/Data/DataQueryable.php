@@ -8,9 +8,9 @@ use PHPCentroid\Query\SelectableExpression;
 class DataQueryable implements iQueryable
 {
     /**
-     * @var DataModel
+     * @var DataModelBase
      */
-    private DataModel $model;
+    private DataModelBase $model;
     /**
      * @var QueryExpression
      */
@@ -19,10 +19,10 @@ class DataQueryable implements iQueryable
      * DataQueryable constructor.
      * @param DataModel $model
      */
-    public function __construct(DataModel $model)
+    public function __construct(DataModelBase $model)
     {
         $this->model = $model;
-        $this->query = new QueryExpression($this->model->get_source());
+        $this->query = new QueryExpression($this->model->getView());
     }
 
     /**
@@ -39,9 +39,9 @@ class DataQueryable implements iQueryable
      * @param string|SelectableExpression $arg,...
      * @return $this
      */
-    public function also_select($arg): iQueryable
+    public function alsoSelect($arg): iQueryable
     {
-        $this->query->also_select($arg);
+        $this->query->alsoSelect($arg);
         return $this;
     }
 
@@ -59,9 +59,9 @@ class DataQueryable implements iQueryable
      * @param SelectableExpression|string $expr,...
      * @return $this
      */
-    public function group_by($expr): iQueryable
+    public function groupBy($expr): iQueryable
     {
-        $this->query->group_by($expr);
+        $this->query->groupBy($expr);
         return $this;
     }
 
@@ -69,9 +69,9 @@ class DataQueryable implements iQueryable
      * @param SelectableExpression|string $expr,...
      * @return $this
      */
-    public function order_by($expr): iQueryable
+    public function orderBy($expr): iQueryable
     {
-        $this->query->order_by($expr);
+        $this->query->orderBy($expr);
         return $this;
     }
 
@@ -79,9 +79,9 @@ class DataQueryable implements iQueryable
      * @param SelectableExpression|string $expr,...
      * @return $this
      */
-    public function then_by($expr): iQueryable
+    public function thenBy($expr): iQueryable
     {
-        $this->query->then_by($expr);
+        $this->query->thenBy($expr);
         return $this;
     }
 
@@ -89,9 +89,9 @@ class DataQueryable implements iQueryable
      * @param SelectableExpression|string $expr,...
      * @return $this
      */
-    public function order_by_descending($expr): iQueryable
+    public function orderByDescending($expr): iQueryable
     {
-        $this->query->order_by_descending($expr);
+        $this->query->orderByDescending($expr);
         return $this;
     }
 
@@ -99,9 +99,9 @@ class DataQueryable implements iQueryable
      * @param SelectableExpression|string $expr,...
      * @return $this
      */
-    public function then_by_descending($expr): DataQueryable
+    public function thenByDescending($expr): DataQueryable
     {
-        $this->query->then_by_descending($expr);
+        $this->query->thenByDescending($expr);
         return $this;
     }
 
@@ -109,7 +109,7 @@ class DataQueryable implements iQueryable
      * @param mixed $arg
      * @return $this
      */
-    public function where($arg): DataQueryable
+    public function where(mixed $arg): DataQueryable
     {
         $this->query->where($arg);
         return $this;
@@ -119,7 +119,7 @@ class DataQueryable implements iQueryable
      * @param mixed $arg
      * @return $this
      */
-    public function also($arg): DataQueryable
+    public function also(mixed $arg): DataQueryable
     {
         $this->query->also($arg);
         return $this;
@@ -129,7 +129,7 @@ class DataQueryable implements iQueryable
      * @param mixed $arg
      * @return $this
      */
-    public function either($arg): iQueryable
+    public function either(mixed $arg): iQueryable
     {
         $this->query->either($arg);
         return $this;
@@ -147,7 +147,7 @@ class DataQueryable implements iQueryable
      * @param mixed $value
      * @return $this
      */
-    public function equal($value): iQueryable
+    public function equal(mixed $value): iQueryable
     {
         $this->query->equal($value);
         return $this;
@@ -157,9 +157,9 @@ class DataQueryable implements iQueryable
      * @param mixed $value
      * @return $this
      */
-    public function not_equal($value): iQueryable
+    public function notEqual(mixed $value): iQueryable
     {
-        $this->query->not_equal($value);
+        $this->query->notEqual($value);
         return $this;
     }
 
@@ -167,9 +167,9 @@ class DataQueryable implements iQueryable
      * @param mixed $value
      * @return $this
      */
-    public function lower_than($value): iQueryable
+    public function lowerThan(mixed $value): iQueryable
     {
-        $this->query->lower_than($value);
+        $this->query->lowerThan($value);
         return $this;
     }
 
@@ -177,9 +177,9 @@ class DataQueryable implements iQueryable
      * @param mixed $value
      * @return $this
      */
-    public function lower_or_equal($value): iQueryable
+    public function lowerOrEqual(mixed $value): iQueryable
     {
-        $this->query->lower_or_equal($value);
+        $this->query->lowerOrEqual($value);
         return $this;
     }
 
@@ -187,9 +187,9 @@ class DataQueryable implements iQueryable
      * @param mixed $value
      * @return $this
      */
-    public function greater_than($value): iQueryable
+    public function greaterThan(mixed $value): iQueryable
     {
-        $this->query->greater_than($value);
+        $this->query->greaterThan($value);
         return $this;
     }
 
@@ -197,63 +197,63 @@ class DataQueryable implements iQueryable
      * @param mixed $value
      * @return $this
      */
-    public function greater_or_equal($value): DataQueryable
+    public function greaterOrEqual(mixed $value): DataQueryable
     {
-        $this->query->greater_or_equal($value);
+        $this->query->greaterOrEqual($value);
         return $this;
     }
 
-    public function get_day(): DataQueryable
+    public function getDay(): DataQueryable
     {
-        $this->query->get_day();
+        $this->query->getDay();
         return $this;
     }
 
-    public function get_month(): iQueryable
+    public function getMonth(): iQueryable
     {
-        $this->query->get_month();
+        $this->query->getMonth();
         return $this;
     }
 
-    public function get_year(): iQueryable
+    public function getYear(): iQueryable
     {
-        $this->query->get_year();
+        $this->query->getYear();
         return $this;
     }
 
-    public function get_seconds(): iQueryable
+    public function getSeconds(): iQueryable
     {
-        $this->query->get_seconds();
+        $this->query->getSeconds();
         return $this;
     }
 
-    public function get_minutes(): iQueryable
+    public function getMinutes(): iQueryable
     {
-        $this->query->get_minutes();
+        $this->query->getMinutes();
         return $this;
     }
 
-    public function get_hours(): iQueryable
+    public function getHours(): iQueryable
     {
-        $this->query->get_hours();
+        $this->query->getHours();
         return $this;
     }
 
-    public function get_date(): iQueryable
+    public function getDate(): iQueryable
     {
-        $this->query->get_date();
+        $this->query->getDate();
         return $this;
     }
 
-    public function to_lower_case(): iQueryable
+    public function toLowerCase(): iQueryable
     {
-        $this->query->to_lower_case();
+        $this->query->toLowerCase();
         return $this;
     }
 
-    public function to_upper_case(): iQueryable
+    public function toUpperCase(): iQueryable
     {
-        $this->query->to_upper_case();
+        $this->query->toUpperCase();
         return $this;
     }
 
@@ -298,7 +298,7 @@ class DataQueryable implements iQueryable
      * @param mixed $x
      * @return $this
      */
-    public function add($x): iQueryable
+    public function add(mixed $x): iQueryable
     {
         $this->query->add($x);
         return $this;
@@ -308,7 +308,7 @@ class DataQueryable implements iQueryable
      * @param mixed $x
      * @return $this
      */
-    public function subtract($x): iQueryable
+    public function subtract(mixed $x): iQueryable
     {
         $this->query->subtract($x);
         return $this;
@@ -318,7 +318,7 @@ class DataQueryable implements iQueryable
      * @param mixed $x
      * @return $this
      */
-    public function multiply($x): iQueryable
+    public function multiply(mixed $x): iQueryable
     {
         $this->query->multiply($x);
         return $this;
@@ -328,7 +328,7 @@ class DataQueryable implements iQueryable
      * @param mixed $x
      * @return $this
      */
-    public function divide($x): iQueryable
+    public function divide(mixed $x): iQueryable
     {
         $this->query->divide($x);
         return $this;
@@ -338,7 +338,7 @@ class DataQueryable implements iQueryable
      * @param mixed $x
      * @return $this
      */
-    public function mod($x): iQueryable
+    public function mod(mixed $x): iQueryable
     {
         $this->query->mod($x);
         return $this;
@@ -348,7 +348,7 @@ class DataQueryable implements iQueryable
      * @param mixed $x
      * @return $this
      */
-    public function bit($x): iQueryable
+    public function bit(mixed $x): iQueryable
     {
         $this->query->bit($x);
         return $this;
