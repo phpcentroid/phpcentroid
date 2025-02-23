@@ -222,11 +222,11 @@ class QueryExpression implements iQueryable
         foreach ($arguments as $argument) {
             Args::check(is_string($argument) || ($argument instanceof SelectableExpression), "Invalid order argument. Expected string or a valid selectable expression");
             if (is_string($expr)) {
-                $this->params['orderby']->append(MemberExpression::create($expr)->order_by(SelectableExpression::ORDER_DESCENDING));
+                $this->params['orderby']->append(MemberExpression::create($expr)->orderBy(SelectableExpression::ORDER_DESCENDING));
             }
             else {
                 $expr->alias = NULL;
-                $expr->order_by(SelectableExpression::ORDER_DESCENDING);
+                $expr->orderBy(SelectableExpression::ORDER_DESCENDING);
                 $this->params['orderby']->append($expr);
             }
         }
@@ -244,11 +244,11 @@ class QueryExpression implements iQueryable
         foreach ($arguments as $argument) {
             Args::check(is_string($argument) || ($argument instanceof SelectableExpression), "Invalid order argument. Expected string or a valid selectable expression");
             if (is_string($expr)) {
-                $this->params['orderby']->append(MemberExpression::create($expr)->order_by(SelectableExpression::ORDER_DESCENDING));
+                $this->params['orderby']->append(MemberExpression::create($expr)->orderBy(SelectableExpression::ORDER_DESCENDING));
             }
             else {
                 $expr->alias = NULL;
-                $expr->order_by(SelectableExpression::ORDER_DESCENDING);
+                $expr->orderBy(SelectableExpression::ORDER_DESCENDING);
                 $this->params['orderby']->append($expr);
             }
         }

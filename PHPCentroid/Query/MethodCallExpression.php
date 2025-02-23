@@ -26,9 +26,9 @@ class MethodCallExpression extends SelectableExpression
     /**
      * MethodCallExpression constructor.
      * @param string $method - The name of the method
-     * @param array|string|DataQueryExpression $arg - An argument or an array of arguments
+     * @param array|string|DataQueryExpression|null $arg - An argument or an array of arguments
      */
-    public function __construct(string $method, $arg = NULL)
+    public function __construct(string $method, array|string|DataQueryExpression $arg = NULL)
     {
         Args::not_blank($method, "Method");
         if (!is_null($arg)) {

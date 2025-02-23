@@ -10,176 +10,193 @@ namespace PHPCentroid\Query;
 
 
 use Closure;
+use Error;
 use PHPCentroid\Common\Args;
+use ReflectionClass;
+use ReflectionMethod;
 
 class SqlFormatter implements iExpressionFormatter
 {
-    public $settings = array('nameFormat' => '`1`');
+    public array $settings = array('nameFormat' => '`1`');
 
-    private $methods = array();
-    /**
-     * @var Closure
-     */
-    private $member_resolver;
-    /**
-     * @var Closure
-     */
-    private $entity_resolver;
+    protected array $methods = array();
 
     public function __construct()
     {
-        //count()
-        $this->method('count', function($p0) {
-            return 'COUNT('.$this->format($p0).')';
-        })//max()
-            ->method('max',function($p0) {
-            return 'MAX('.$this->format($p0).')';
-        })//min()
-            ->method('min',function($p0) {
-            return 'MIN('.$this->format($p0).')';
-        })//avg()
-            ->method('avg',function($p0) {
-            return 'AVG('.$this->format($p0).')';
-        })//sum()
-            ->method('sum',function($p0) {
-            return 'SUM('.$this->format($p0).')';
-        })//regex()
-            ->method('regex', function($p0, $p1) {
-            $s0 = $this->format($p0);
-            Args::check($p1 instanceof LiteralExpression,"Invalid pattern expression");
-            Args::not_blank($p1->value, "Pattern expression");
-            $s1 = $this->escape($p1);
-            return "($s0 REGEXP $s1)";
-        })//length()
-            ->method('length',function($p0) {
-            return 'LEN('.$this->format($p0).')';
-        })//startswith()
-        ->method('startswith', function($p0, $p1) {
-            $s0 = $this->format($p0);
-            Args::check($p1 instanceof LiteralExpression,"Invalid pattern expression");
-            Args::not_blank($p1->value, "Pattern expression");
-            $p1->value = '^'.$p1->value;
-            $s1 = $this->escape($p1);
-            return "($s0 REGEXP $s1)";
-        })//endswith()
-        ->method('endswith', function($p0, $p1) {
-            $s0 = $this->format($p0);
-            Args::check($p1 instanceof LiteralExpression,"Invalid pattern expression");
-            Args::not_blank($p1->value, "Pattern expression");
-            $p1->value = $p1->value.'$';
-            $s1 = $this->escape($p1);
-            return "($s0 REGEXP $s1)";
-        })//trim()
-        ->method('trim', function($p0) {
-            return 'TRIM('.$this->format($p0).')';
-        })//concat()
-        ->method('concat', function($p0, $p1) {
-            $s0 = $this->format($p0);
-            $s1 = $this->format($p1);
-            return "CONCAT($s0, $s1)";
-        })//indexof()
-        ->method('indexof', function($p0, $p1) {
-            $s0 = $this->format($p0);
-            $s1 = $this->format($p1);
-            return "LOCATE($s0, $s1)";
-        })//substring()
-        ->method('substring', function($p0, $pos, $length = NULL) {
-            $s0 = $this->format($p0);
-            Args::check(is_int($pos->value) && ($pos->value>=0),"Substring position must be a valid non-negative integer");
-            $s1 = $this->escape($pos->value + 1);
-            if (is_null($length)) {
-                return "SUBSTRING($s0, $s1)";
-            }
-            else {
-                Args::check(is_int($length->value) && ($length->value>0), "Substring length must be a valid positive integer");
-                $s2 = $this->escape($length->value);
-                return "SUBSTRING($s0, $s1, $s2)";
-            }
-        })//tolower()
-        ->method('tolower', function($p0) {
-            return 'LOWER('.$this->format($p0).')';
-        })//toupper()
-        ->method('toupper', function($p0) {
-            return 'UPPER('.$this->format($p0).')';
-        })//contains()
-        ->method('contains', function($p0, $p1) {
-            $s0 = $this->format($p0);
-            Args::check($p1 instanceof LiteralExpression,"Invalid pattern expression");
-            Args::not_blank($p1->value, "Pattern expression");
-            $s1 = $this->escape($p1);
-            return "($s0 REGEXP $s1)";
-        })//text()
-        ->method('text', function($p0, $p1) {
-            $s0 = $this->format($p0);
-            Args::check($p1 instanceof LiteralExpression,"Invalid pattern expression");
-            Args::not_blank($p1->value, "Pattern expression");
-            $s1 = $this->escape($p1);
-            return "($s0 REGEXP $s1)";
-        })//day()
-        ->method('day', function($p0) {
-            return 'DAY('.$this->format($p0).')';
-        })//month()
-        ->method('month', function($p0) {
-            return 'MONTH('.$this->format($p0).')';
-        })//year()
-        ->method('year', function($p0) {
-            return 'YEAR('.$this->format($p0).')';
-        })//hour()
-        ->method('hour', function($p0) {
-            return 'HOUR('.$this->format($p0).')';
-        })//minute()
-        ->method('minute', function($p0) {
-            return 'MINUTE('.$this->format($p0).')';
-        })//second()
-        ->method('second', function($p0) {
-            return 'SECOND('.$this->format($p0).')';
-        })//date()
-        ->method('date', function($p0) {
-            return 'DATE('.$this->format($p0).')';
-        })//floor()
-        ->method('floor', function($p0) {
-            return 'FLOOR('.$this->format($p0).')';
-        })//ceiling()
-        ->method('ceiling', function($p0) {
-            return 'CEILING('.$this->format($p0).')';
-        })//ceiling()
-        ->method('ceiling', function($p0) {
-            return 'CEILING('.$this->format($p0).')';
-        })//round()
-        ->method('round', function($p0, $decimals = NULL) {
-            $s0 = $this->format($p0);
-            if (is_null($decimals)) {
-                return "ROUND($s0, 0)";
-            }
-            else {
-                $s1 = $this->format($decimals);
-                return "ROUND($s0, $s1)";
-            }
-        })//bit()
-        ->method('bit', function($p0, $p1) {
-            $s0 = $this->format($p0);
-            $s1 = $this->format($p1);
-            return "($s0 & $s1)";
+        $reflectionClass = new ReflectionClass($this);
+        $methods = $reflectionClass->getMethods(ReflectionMethod::IS_PUBLIC);
+        $methods = array_filter($methods, function($x) {
+            return current($x->getAttributes(SqlFormatterMethod::class)) !== FALSE;
         });
+        $this->methods = array_map(function($method) {
+            return array($method->getName(), $method);
+        }, $methods);
     }
 
-    /**
-     * @param string $name
-     * @param Closure $closure
-     * @return $this;
-     */
-    public function method($name, $closure) {
-        Args::not_blank($name, 'Method name');
-        Args::check($closure instanceof Closure, "Method must a valid closure");
-        $this->methods[$name] = $closure;
-        return $this;
+
+    #[SqlFormatterMethod]
+    function count($arg): string {
+        return "COUNT({$this->format($arg)})";
+    }
+
+    #[SqlFormatterMethod]
+    function min($arg): string {
+        return "MIN({$this->escape($arg)})";
+    }
+
+    #[SqlFormatterMethod]
+    function max($arg): string {
+        return "MAX({$this->escape($arg)})";
+    }
+
+    #[SqlFormatterMethod]
+    function sum($arg): string {
+        return "SUM({$this->escape($arg)})";
+    }
+
+    #[SqlFormatterMethod]
+    function avg($arg): string {
+        return "AVG({$this->escape($arg)})";
+    }
+
+    #[SqlFormatterMethod]
+    function length($arg): string {
+        return "LEN({$this->escape($arg)})";
+    }
+
+    #[SqlFormatterMethod]
+    function startsWith($arg, $search): string {
+        $s0 = $this->escape($arg);
+        Args::check($search instanceof LiteralExpression,"Invalid pattern expression");
+        Args::not_blank($search->value, "Pattern expression");
+        $search->value = '^'.$search->value;
+        $s1 = $this->escape($search);
+        return "($s0 REGEXP $s1)";
+    }
+
+    #[SqlFormatterMethod]
+    function endsWith($arg, $search): string {
+        $s0 = $this->escape($arg);
+        Args::check($search instanceof LiteralExpression,"Invalid pattern expression");
+        Args::not_blank($search->value, "Pattern expression");
+        $search->value = $search->value.'$';
+        $s1 = $this->escape($search);
+        return "($s0 REGEXP $s1)";
+    }
+
+    #[SqlFormatterMethod]
+    function trim($arg): string {
+        return "TRIM({$this->escape($arg)})";
+    }
+
+    #[SqlFormatterMethod]
+    function concat(...$arg): string {
+        return "CONCAT(".implode(', ', array_map(function($x) {
+                return $this->escape($x);
+            }, $arg)).")";
+    }
+
+    #[SqlFormatterMethod]
+    function indexOf($arg0, $search): string {
+        return "LOCATE({$this->escape($arg0)}, {$this->escape($search)})";
+    }
+
+    #[SqlFormatterMethod]
+    function toLower($arg): string {
+        return "LOWER({$this->escape($arg)})";
+    }
+
+    #[SqlFormatterMethod]
+    function toUpper($arg): string {
+        return "UPPER({$this->escape($arg)})";
+    }
+
+    #[SqlFormatterMethod]
+    function contains($arg, $search): string {
+        return "({$this->escape($arg)} REGEXP {$this->escape($search)})";
+    }
+
+    #[SqlFormatterMethod]
+    function day($arg): string {
+        return "DAY({$this->escape($arg)})";
+    }
+
+    #[SqlFormatterMethod]
+    function month($arg): string {
+        return "MONTH({$this->escape($arg)})";
+    }
+
+    #[SqlFormatterMethod]
+    function year($arg): string {
+        return "YEAR({$this->escape($arg)})";
+    }
+
+    #[SqlFormatterMethod]
+    function hour($arg): string {
+        return "HOUR({$this->escape($arg)})";
+    }
+
+    #[SqlFormatterMethod]
+    function minute($arg): string {
+        return "MINUTE({$this->escape($arg)})";
+    }
+
+    #[SqlFormatterMethod]
+    function second($arg): string {
+        return "SECOND({$this->escape($arg)})";
+    }
+
+    #[SqlFormatterMethod]
+    function date($arg): string {
+        return "DATE({$this->escape($arg)})";
+    }
+
+    #[SqlFormatterMethod]
+    function floor($arg): string {
+        return "FLOOR({$this->escape($arg)})";
+    }
+
+    #[SqlFormatterMethod]
+    function ceiling($arg): string {
+        return "CEILING({$this->escape($arg)})";
+    }
+
+    #[SqlFormatterMethod]
+    function round($arg, $decimals = NULL): string {
+        if (is_null($decimals)) {
+            return "ROUND({$this->escape($arg)}, 0)";
+        }
+        return "ROUND({$this->escape($arg)}, {$this->escape($decimals)})";
+    }
+
+    #[SqlFormatterMethod]
+    function bit($arg1, $arg2): string {
+        return "({$this->escape($arg1)} & {$this->escape($arg2)})";
+    }
+
+    #[SqlFormatterMethod]
+    function regex($arg, $pattern): string {
+        return "({$this->escape($arg)} REGEXP {$this->escape($pattern)})";
+    }
+
+    #[SqlFormatterMethod]
+    function text($arg, $pattern): string {
+        return "({$this->escape($arg)} REGEXP {$this->escape($pattern)})";
+    }
+
+    #[SqlFormatterMethod]
+    function substring($arg, $pos, $length = NULL): string {
+        if (is_null($length)) {
+            return "SUBSTRING({$this->escape($arg)}, {$this->escape($pos)} + 1)";
+        }
+        return "SUBSTRING({$this->escape($arg)}, {$this->escape($pos)} + 1, {$this->escape($length)})";
     }
 
     /**
      * @param ComparisonExpression $expr
      * @return string
      */
-    protected function format_comparison($expr) {
+    protected function formatComparison(ComparisonExpression $expr): string {
         $left = $this->format($expr->left);
         $right = $this->format($expr->right);
         if (preg_match('/^null$/i',$right)) {
@@ -206,17 +223,17 @@ class SqlFormatter implements iExpressionFormatter
             case 'in':
                 Args::check(is_array($right),"Right operand must be an array");
                 if (count($right) == 1) {
-                    return $this->format_comparison(new ComparisonExpression($left,'eq',$right[0]));
+                    return $this->formatComparison(new ComparisonExpression($left,'eq',$right[0]));
                 }
                 return "($left IN ($right))";
             case 'nin':
                 Args::check(is_array($right),"Right operand must be an array");
                 if (count($right) == 1) {
-                    return $this->format_comparison(new ComparisonExpression($left,'ne',$right[0]));
+                    return $this->formatComparison(new ComparisonExpression($left,'ne',$right[0]));
                 }
                 return "($left IN ($right))";
             default:
-                throw new \Error('Unsupported comparison operator');
+                throw new Error('Unsupported comparison operator');
         }
     }
 
@@ -224,7 +241,7 @@ class SqlFormatter implements iExpressionFormatter
      * @param ArithmeticExpression $expr
      * @return string
      */
-    protected function format_arithmetic($expr) {
+    protected function formatArithmetic(ArithmeticExpression $expr): string {
         $left = $this->format($expr->left);
         $right = $this->format($expr->right);
         switch ($expr->operator) {
@@ -239,11 +256,11 @@ class SqlFormatter implements iExpressionFormatter
             case 'mod':
                 return "($left % $right)";
         }
-        throw new \Error("Unsupported arithmetic operator");
+        throw new Error("Unsupported arithmetic operator");
     }
 
-    protected function format_limit_select($expr): string {
-        $sql = $this->format_select($expr);
+    protected function formatLimitSelect($expr): string {
+        $sql = $this->formatSelect($expr);
         if (array_key_exists('top', $expr->params) && is_numeric($expr->params['top'])) {
             $top = intval($expr->params['top']);
             if ($top<0) {
@@ -262,28 +279,27 @@ class SqlFormatter implements iExpressionFormatter
         return $sql;
     }
 
-    public function escape($value) {
+    public function escape(mixed $value): string {
+        if ($value instanceof DataQueryExpression) {
+            return $this->format($value);
+        }
         return DataQueryExpression::escape($value);
     }
 
-    public function escape_name($name) {
-        if (is_string($name)) {
-            return preg_replace('/(\w+)/', $name, $this->settings['nameFormat']);
-        }
-        return $name;
+    public function escapeName(string $name): string {
+        return preg_replace('/(\w+)/', $name, $this->settings['nameFormat']);
     }
 
     /**
      * @param QueryExpression $expression
      * @return string
      */
-    protected function format_select($expression) {
-        Args::check($expression instanceof QueryExpression, "Invalid argument. Expected QueryExpression");
+    protected function formatSelect(QueryExpression $expression): string {
         Args::check(array_key_exists('select', $expression->params) && is_array($expression->params['select']), "Invalid select expression. Expected array");
         Args::not_empty($expression->params['select'], "Select arguments");
         Args::check(array_key_exists('entity', $expression->params) && $expression->params['entity'] instanceof EntityExpression, "Invalid entity expression. Expected object");
         /**
-         * @var EntityExpression
+         * @var EntityExpression $entity
          */
         $entity = $expression->params['entity'];
 
@@ -291,11 +307,11 @@ class SqlFormatter implements iExpressionFormatter
          * @param SelectableExpression $x
          * @return string
          */
-        $map = function($x) {
-            if (is_null($x->alias)) {
+        $map = function(SelectableExpression $x) {
+            if (!isset($x->alias)) {
                 return $this->format($x);
             }
-            return $this->format($x).' AS '.$this->escape_name($x->alias);
+            return $this->format($x).' AS '.$this->escapeName($x->alias);
         };
         $from = $this->format($entity);
         $select = implode(', ', array_map($map, $expression->params['select']));
@@ -312,97 +328,86 @@ class SqlFormatter implements iExpressionFormatter
         }
         //2. where statement
         if ($expression->has_filter()) {
-            $sql .= $this->format_where($expression);
+            $sql .= $this->formatWhere($expression);
         }
         //3. group by statement
         if ($expression->has_groups()) {
-            $sql .= $this->format_group_by($expression);
+            $sql .= $this->formatGroupBy($expression);
         }
         //4. order by statement
         if ($expression->has_orders()) {
-            $sql .= $this->format_order_by($expression);
+            $sql .= $this->formatOrderBy($expression);
         }
         return $sql;
     }
 
-    protected function format_update($expression) {
-
+    protected function formatUpdate(QueryExpression $expression): mixed {
+        throw new Error("Not implemented");
     }
 
-    protected function format_insert($expression) {
-
+    /** @noinspection PhpUnusedParameterInspection */
+    protected function formatInsert(QueryExpression $expression): mixed {
+        throw new Error("Not implemented");
     }
 
-    protected function format_order_by($expression) {
+    protected function formatOrderBy(mixed $expression): string {
         Args::check($expression instanceof QueryExpression, 'Invalid argument. Expected query expression');
         if (!array_key_exists('orderby', $expression->params)) {
             return '';
         }
         /**
-         * @var MemberListExpression
+         * @var MemberListExpression $orders
          */
         $orders = $expression->params['orderby'];
         Args::check($orders instanceof MemberListExpression, 'Invalid order expression. Expected member list');
         if ($orders->count() == 0) {
             return '';
         }
-        /**
-         * @param SelectableExpression $expr
-         * @return mixed
-         */
-        $map = function ($expr) {
+        $map = function (SelectableExpression $expr) {
             return $this->format($expr).($expr->order=='desc' ? ' DESC' : ' ASC');
         };
         return ' ORDER BY '.implode(', ', array_map($map, $orders->getArrayCopy()));
     }
 
-    protected function format_group_by($expression) {
+    protected function formatGroupBy(mixed $expression): string {
         Args::check($expression instanceof QueryExpression, 'Invalid argument. Expected query expression');
         if (!array_key_exists('groupby', $expression->params)) {
             return '';
         }
-        /**
-         * @type MemberListExpression
-         */
         $groups = $expression->params['groupby'];
         Args::check($groups instanceof MemberListExpression, 'Invalid group by expression. Expected member list');
         if ($groups->count() == 0) {
             return '';
         }
-        /**
-         * @param SelectableExpression $expr
-         * @return mixed
-         */
-        $map = function ($expr) {
+        $map = function (SelectableExpression $expr) {
             return $this->format($expr);
         };
         return ' GROUP BY '.implode(', ', array_map($map, $groups->getArrayCopy()));
     }
 
-    protected function format_delete($expression) {
-
+    protected function formatDelete(QueryExpression $expression): mixed {
+        throw new Error("Not implemented");
     }
 
     /**
      * @param QueryExpression $expression
      * @return string
      */
-    protected function format_where($expression) {
-        Args::check($expression instanceof QueryExpression, 'Invalid argument. Expected query expression');
+    protected function formatWhere(QueryExpression $expression): string {
         $expr = $expression->get_filter();
         if (is_null($expr)) {
             return '';
         }
         if ($expr instanceof ComparisonExpression) {
-            return ' WHERE '.$this->format_comparison($expr);
+            return ' WHERE '.$this->formatComparison($expr);
         }
         else if ($expr instanceof LogicalExpression) {
-            return ' WHERE '.$this->format_logical($expr);
+            return ' WHERE '.$this->formatLogical($expr);
         }
-        throw new \InvalidArgumentException("Invalid filter expression. Expected a logical or comparison expression");
+        throw new Error("Invalid filter expression. Expected a logical or comparison expression");
     }
 
-    protected function format_logical($expr) {
+    protected function formatLogical(mixed $expr): string {
 
         Args::check($expr instanceof LogicalExpression, 'Invalid argument. Expected logical expression');
         $args = array_map(function($x) {
@@ -418,14 +423,14 @@ class SqlFormatter implements iExpressionFormatter
             case 'not':
                 return 'NOT ('.join(' AND ', $args).')';
         }
-        throw new InvalidArgumentException('Unsupported logical operator');
+        throw new Error('Unsupported logical operator');
     }
 
     /**
      * @param MethodCallExpression $expr
      * @return mixed
      */
-    protected function format_method($expr) {
+    protected function formatMethod(MethodCallExpression $expr): mixed {
         $args = array_map(function($arg) {
            return $this->format($arg);
         }, $expr->args);
@@ -438,38 +443,36 @@ class SqlFormatter implements iExpressionFormatter
         return $expr->method.'('.implode(', ', $args).')';
     }
 
-    public function resolve_entity($closure) {
-        Args::check($closure instanceof Closure, 'Invalid argument. Expected closure');
-        $this->entity_resolver = $closure;
+    public function resolveEntity(Closure $closure): void {
+        $this->entityResolver = $closure;
     }
 
-    public function resolve_member($closure) {
-        Args::check($closure instanceof Closure, 'Invalid argument. Expected closure');
-        $this->entity_resolver = $closure;
+    public function resolveMember(Closure $closure): void {
+        $this->entityResolver = $closure;
     }
 
-    protected function format_member($expr) {
+    protected function formatMember(mixed $expr): string {
 
-        if ($this->member_resolver instanceof Closure) {
-            $member = $this->member_resolver->call($this, $expr->name, $expr->entity);
+        if ($this->memberResolver instanceof Closure) {
+            $member = $this->memberResolver->call($this, $expr->name, $expr->entity);
             Args::string($member, 'Member');
             Args::not_blank($member, 'Member');
             if (is_null($expr->entity)) {
-                return $this->escape_name($member);
+                return $this->escapeName($member);
             }
             else {
-                return $this->format_entity($expr->entity).'.'.$this->escape_name($member);
+                return $this->formatEntity($expr->entity).'.'.$this->escapeName($member);
             }
         }
         else {
             if (is_null($expr->entity))
-                return $this->escape_name($expr->name);
+                return $this->escapeName($expr->name);
             else
-                return $this->format_entity($expr->entity).'.'.$this->escape_name($expr->name);
+                return $this->formatEntity($expr->entity).'.'.$this->escapeName($expr->name);
         }
     }
 
-    protected function format_entity($expr) {
+    protected function formatEntity($expr): string {
         Args::check(is_string($expr) || ($expr instanceof EntityExpression), 'Invalid argument. Expected string or an entity expression');
         if (is_string($expr)) {
             $entity = $expr;
@@ -477,12 +480,12 @@ class SqlFormatter implements iExpressionFormatter
         else {
             $entity = $expr->name;
         }
-        if ($this->entity_resolver instanceof Closure) {
-            $entity = $this->entity_resolver->call($this, $entity);
+        if ($this->entityResolver instanceof Closure) {
+            $entity = $this->entityResolver->call($this, $entity);
             Args::string($entity, 'Entity');
             Args::not_blank($entity, 'Entity');
         }
-        return $this->escape_name($entity);
+        return $this->escapeName($entity);
     }
 
     /**
@@ -490,24 +493,24 @@ class SqlFormatter implements iExpressionFormatter
      * @param string $format
      * @return mixed
      */
-    public function format($expr, $format = NULL) {
+    public function format($expr, $format = NULL): mixed {
         if ($expr instanceof EntityExpression) {
-            return $this->format_entity($expr);
+            return $this->formatEntity($expr);
         }
         else if ($expr instanceof MemberExpression) {
-            return $this->format_member($expr);
+            return $this->formatMember($expr);
         }
         else if ($expr instanceof ComparisonExpression) {
-            return $this->format_comparison($expr);
+            return $this->formatComparison($expr);
         }
         else if ($expr instanceof LogicalExpression) {
-            return $this->format_logical($expr);
+            return $this->formatLogical($expr);
         }
         else if ($expr instanceof QueryExpression) {
-            return $this->format_select($expr);
+            return $this->formatSelect($expr);
         }
         else if ($expr instanceof MethodCallExpression) {
-            return $this->format_method($expr);
+            return $this->formatMethod($expr);
         }
         else if ($expr instanceof LiteralExpression) {
             return $this->escape($expr->value);
