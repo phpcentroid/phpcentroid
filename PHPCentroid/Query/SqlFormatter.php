@@ -17,9 +17,11 @@ use ReflectionMethod;
 
 class SqlFormatter implements iExpressionFormatter
 {
-    public array $settings = array('nameFormat' => '`1`');
+    public array $settings = array('nameFormat' => '`$1`');
 
-    protected array $methods = array();
+    protected ObjectNameValidator $nameValidator;
+
+    protected array $methods = [];
 
     public function __construct()
     {
@@ -28,44 +30,48 @@ class SqlFormatter implements iExpressionFormatter
         $methods = array_filter($methods, function($x) {
             return current($x->getAttributes(SqlFormatterMethod::class)) !== FALSE;
         });
-        $this->methods = array_map(function($method) {
-            return array($method->getName(), $method);
+        $keys = array_map(function($method) {
+            return$method->getName();
         }, $methods);
+        $this->methods = array_combine($keys, array_map(function($method) {
+            return $method->getClosure($this);
+        }, $methods));
+        $this->nameValidator = new ObjectNameValidator();
     }
 
 
     #[SqlFormatterMethod]
-    function count($arg): string {
+    public function count($arg): string {
         return "COUNT({$this->format($arg)})";
     }
 
     #[SqlFormatterMethod]
-    function min($arg): string {
+    public function min($arg): string {
         return "MIN({$this->escape($arg)})";
     }
 
     #[SqlFormatterMethod]
-    function max($arg): string {
+    public function max($arg): string {
         return "MAX({$this->escape($arg)})";
     }
 
     #[SqlFormatterMethod]
-    function sum($arg): string {
+    public function sum($arg): string {
         return "SUM({$this->escape($arg)})";
     }
 
     #[SqlFormatterMethod]
-    function avg($arg): string {
+    public function avg($arg): string {
         return "AVG({$this->escape($arg)})";
     }
 
     #[SqlFormatterMethod]
-    function length($arg): string {
+    public function length($arg): string {
         return "LEN({$this->escape($arg)})";
     }
 
     #[SqlFormatterMethod]
-    function startsWith($arg, $search): string {
+    public function startsWith($arg, $search): string {
         $s0 = $this->escape($arg);
         Args::check($search instanceof LiteralExpression,"Invalid pattern expression");
         Args::not_blank($search->value, "Pattern expression");
@@ -75,7 +81,7 @@ class SqlFormatter implements iExpressionFormatter
     }
 
     #[SqlFormatterMethod]
-    function endsWith($arg, $search): string {
+    public function endsWith($arg, $search): string {
         $s0 = $this->escape($arg);
         Args::check($search instanceof LiteralExpression,"Invalid pattern expression");
         Args::not_blank($search->value, "Pattern expression");
@@ -85,54 +91,54 @@ class SqlFormatter implements iExpressionFormatter
     }
 
     #[SqlFormatterMethod]
-    function trim($arg): string {
+    public function trim($arg): string {
         return "TRIM({$this->escape($arg)})";
     }
 
     #[SqlFormatterMethod]
-    function concat(...$arg): string {
+    public function concat(...$arg): string {
         return "CONCAT(".implode(', ', array_map(function($x) {
                 return $this->escape($x);
             }, $arg)).")";
     }
 
     #[SqlFormatterMethod]
-    function indexOf($arg0, $search): string {
+    public function indexOf($arg0, $search): string {
         return "LOCATE({$this->escape($arg0)}, {$this->escape($search)})";
     }
 
     #[SqlFormatterMethod]
-    function toLower($arg): string {
+    public function toLower($arg): string {
         return "LOWER({$this->escape($arg)})";
     }
 
     #[SqlFormatterMethod]
-    function toUpper($arg): string {
+    public function toUpper($arg): string {
         return "UPPER({$this->escape($arg)})";
     }
 
     #[SqlFormatterMethod]
-    function contains($arg, $search): string {
+    public function contains($arg, $search): string {
         return "({$this->escape($arg)} REGEXP {$this->escape($search)})";
     }
 
     #[SqlFormatterMethod]
-    function day($arg): string {
+    public function day($arg): string {
         return "DAY({$this->escape($arg)})";
     }
 
     #[SqlFormatterMethod]
-    function month($arg): string {
+    public function month($arg): string {
         return "MONTH({$this->escape($arg)})";
     }
 
     #[SqlFormatterMethod]
-    function year($arg): string {
+    public function year($arg): string {
         return "YEAR({$this->escape($arg)})";
     }
 
     #[SqlFormatterMethod]
-    function hour($arg): string {
+    public function hour($arg): string {
         return "HOUR({$this->escape($arg)})";
     }
 
@@ -147,12 +153,12 @@ class SqlFormatter implements iExpressionFormatter
     }
 
     #[SqlFormatterMethod]
-    function date($arg): string {
+    public function date($arg): string {
         return "DATE({$this->escape($arg)})";
     }
 
     #[SqlFormatterMethod]
-    function floor($arg): string {
+    public function floor($arg): string {
         return "FLOOR({$this->escape($arg)})";
     }
 
@@ -162,7 +168,7 @@ class SqlFormatter implements iExpressionFormatter
     }
 
     #[SqlFormatterMethod]
-    function round($arg, $decimals = NULL): string {
+    public function round($arg, $decimals = NULL): string {
         if (is_null($decimals)) {
             return "ROUND({$this->escape($arg)}, 0)";
         }
@@ -170,22 +176,22 @@ class SqlFormatter implements iExpressionFormatter
     }
 
     #[SqlFormatterMethod]
-    function bit($arg1, $arg2): string {
+    public function bit($arg1, $arg2): string {
         return "({$this->escape($arg1)} & {$this->escape($arg2)})";
     }
 
     #[SqlFormatterMethod]
-    function regex($arg, $pattern): string {
+    public function regex($arg, $pattern): string {
         return "({$this->escape($arg)} REGEXP {$this->escape($pattern)})";
     }
 
     #[SqlFormatterMethod]
-    function text($arg, $pattern): string {
+    public function text($arg, $pattern): string {
         return "({$this->escape($arg)} REGEXP {$this->escape($pattern)})";
     }
 
     #[SqlFormatterMethod]
-    function substring($arg, $pos, $length = NULL): string {
+    public function substring($arg, $pos, $length = NULL): string {
         if (is_null($length)) {
             return "SUBSTRING({$this->escape($arg)}, {$this->escape($pos)} + 1)";
         }
@@ -286,8 +292,12 @@ class SqlFormatter implements iExpressionFormatter
         return DataQueryExpression::escape($value);
     }
 
+    public function getNameValidator(): ObjectNameValidator {
+        return $this->nameValidator;
+    }
+
     public function escapeName(string $name): string {
-        return preg_replace('/(\w+)/', $name, $this->settings['nameFormat']);
+        return $this->getNameValidator()->escape($name, $this->settings['nameFormat']);
     }
 
     /**
@@ -364,7 +374,7 @@ class SqlFormatter implements iExpressionFormatter
             return '';
         }
         $map = function (SelectableExpression $expr) {
-            return $this->format($expr).($expr->order=='desc' ? ' DESC' : ' ASC');
+            return $this->format($expr).(isset($expr->order) ? ($expr->order=='desc' ? ' DESC' : ' ASC') : ' ASC');
         };
         return ' ORDER BY '.implode(', ', array_map($map, $orders->getArrayCopy()));
     }
@@ -453,23 +463,10 @@ class SqlFormatter implements iExpressionFormatter
 
     protected function formatMember(mixed $expr): string {
 
-        if ($this->memberResolver instanceof Closure) {
-            $member = $this->memberResolver->call($this, $expr->name, $expr->entity);
-            Args::string($member, 'Member');
-            Args::not_blank($member, 'Member');
-            if (is_null($expr->entity)) {
-                return $this->escapeName($member);
-            }
-            else {
-                return $this->formatEntity($expr->entity).'.'.$this->escapeName($member);
-            }
-        }
-        else {
-            if (is_null($expr->entity))
+        if (is_null($expr->entity))
                 return $this->escapeName($expr->name);
             else
                 return $this->formatEntity($expr->entity).'.'.$this->escapeName($expr->name);
-        }
     }
 
     protected function formatEntity($expr): string {
@@ -480,11 +477,11 @@ class SqlFormatter implements iExpressionFormatter
         else {
             $entity = $expr->name;
         }
-        if ($this->entityResolver instanceof Closure) {
-            $entity = $this->entityResolver->call($this, $entity);
-            Args::string($entity, 'Entity');
-            Args::not_blank($entity, 'Entity');
-        }
+        // if ($this->entityResolver instanceof Closure) {
+        //     $entity = $this->entityResolver->call($this, $entity);
+        //     Args::string($entity, 'Entity');
+        //     Args::not_blank($entity, 'Entity');
+        // }
         return $this->escapeName($entity);
     }
 

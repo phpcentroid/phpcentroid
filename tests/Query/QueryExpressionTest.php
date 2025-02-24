@@ -81,8 +81,8 @@ class QueryExpressionTest extends TestCase
             ->orderBy('familyName', 'givenName')
             ->from('Person');
         $formatter = new SqlFormatter();
-        var_dump($q);
-        $this->assertEquals('SELECT `id`, `givenName`, `familyName`, `dateCreated` AS `created` FROM `Person` ORDER BY `familyName` ASC, `givenName` ASC', $formatter->format($q), 'Wrong SQL statement');
+        $sql = $formatter->format($q);
+        $this->assertEquals('SELECT `id`, `givenName`, `familyName`, `dateCreated` AS `created` FROM `Person` ORDER BY `familyName` ASC, `givenName` ASC', $sql, 'Wrong SQL statement');
     }
 
     public function test_QueryExpressionSelectAndGroup()

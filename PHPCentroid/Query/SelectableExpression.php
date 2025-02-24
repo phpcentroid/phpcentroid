@@ -19,12 +19,12 @@ abstract class SelectableExpression extends DataQueryExpression
      * Gets or sets a string which represents the alias of this member.
      * @var string
      */
-    public string $alias;
+    public ?string $alias;
     /**
      * Gets or sets a string which represents the order of this member if this is going to be used in order expressions.
      * @var string
      */
-    public string $order;
+    public ?string $order;
     /**
      * @param ?string $alias
      * @return SelectableExpression
@@ -34,15 +34,14 @@ abstract class SelectableExpression extends DataQueryExpression
         $this->alias = is_null($alias) ? NULL : trim($alias);
         return $this;
     }
-    const ORDER_ASCENDING = 'asc';
-    const ORDER_DESCENDING = 'desc';
-    const OPERATOR_REGEX = '/^(asc|desc)$/i';
+    public const ORDER_ASCENDING = 'asc';
+    public const ORDER_DESCENDING = 'desc';
+    public const OPERATOR_REGEX = '/^(asc|desc)$/i';
     /**
      * @param string $order
      * @return SelectableExpression
      */
     public function orderBy(string $order): SelectableExpression {
-        Args::string($order, "Order");
         Args::check(preg_match(SelectableExpression::OPERATOR_REGEX,$order)>0, 'Invalid order operator. Expected ASC or DESC');
         $this->order = strtolower($order);
         return $this;
