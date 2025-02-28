@@ -23,6 +23,8 @@
     "lodash-php/lodash-php": "dev-master",
     "symfony/serializer-pack": "dev-main",
     "mmucklo/inflect": "dev-master",
-    "ext-sqlite3": "*"
+    "ext-sqlite3": "*",
+    "nikic/php-parser": "^5.4",
+    "opis/closure": "^4.0@dev"
   }
 }

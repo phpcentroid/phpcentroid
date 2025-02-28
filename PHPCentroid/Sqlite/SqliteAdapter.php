@@ -107,7 +107,7 @@ class SqliteAdapter extends DataAdapter
     /**
      * @throws Exception
      */
-    function getTable(string $table): DataTableBase
+    public function getTable(string $table): DataTableBase
     {
         throw new Exception('Not implemented');
     }
@@ -115,7 +115,7 @@ class SqliteAdapter extends DataAdapter
     /**
      * @throws Exception
      */
-    function getView(string $view): DataViewBase
+    public function getView(string $view): DataViewBase
     {
         throw new Exception('Not implemented');
     }
@@ -128,7 +128,7 @@ class SqliteAdapter extends DataAdapter
         throw new Exception('Not implemented');
     }
 
-    function getFormatter(): SqlFormatter
+    public function getFormatter(): SqlFormatter
     {
         return new SqliteFormatter();
     }
