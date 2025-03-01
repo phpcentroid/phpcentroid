@@ -67,7 +67,7 @@ class Args
      * @param string $message
      * @throws Error
      */
-    public static function check(bool $expression, string $message) {
+    public static function check(bool $expression, string $message): void {
         if (!$expression) {
             throw new Error($message);
         }

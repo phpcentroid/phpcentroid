@@ -25,6 +25,6 @@
     "mmucklo/inflect": "dev-master",
     "ext-sqlite3": "*",
     "nikic/php-parser": "^5.4",
-    "opis/closure": "^4.0@dev"
+    "opis/closure": "3.x"
   }
 }
