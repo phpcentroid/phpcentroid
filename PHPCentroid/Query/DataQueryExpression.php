@@ -13,15 +13,16 @@ abstract class DataQueryExpression
 {
     /**
      * @param mixed $formatter
-     * @return mixed
+     * @return string
      */
-    abstract public function to_str($formatter = NULL);
+    abstract public function to_str(mixed $formatter = NULL): string;
 
     public function __toString()
     {
         return $this->to_str();
     }
 
+    /** @noinspection PhpMixedReturnTypeCanBeReducedInspection */
     public static function escape($value = null): mixed {
         //0. null
         if (is_null($value))
@@ -66,5 +67,7 @@ abstract class DataQueryExpression
             return "'$str'";
         }
     }
+
+    public abstract function toArray(): array;
 
 }

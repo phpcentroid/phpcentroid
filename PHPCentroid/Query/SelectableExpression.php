@@ -48,4 +48,6 @@ abstract class SelectableExpression extends DataQueryExpression
         return $this;
     }
 
+    public abstract function toArray(): array;
+
 }

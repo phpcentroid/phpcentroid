@@ -45,14 +45,14 @@ class DataQueryable implements iQueryable
         return $this;
     }
 
-    public function has_fields(): bool|int
+    public function hasFields(): bool|int
     {
-        return $this->query->has_fields();
+        return $this->query->hasFields();
     }
 
-    public function has_filter(): bool
+    public function hasFilter(): bool
     {
-        return $this->query->has_filter();
+        return $this->query->hasFilter();
     }
 
     /**

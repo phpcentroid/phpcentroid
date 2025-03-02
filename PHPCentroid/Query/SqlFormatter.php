@@ -599,7 +599,13 @@ class SqlFormatter implements iExpressionFormatter
         $arr = [];
         foreach ($fields as $key => $field) {
             if (is_string($key)) {
-                $arr[] = $this->escape($field) . ' AS ' . $this->escapeName($key);
+                $expr = $this->escape($field);
+                $alias = $this->escapeName($key);
+                if ($expr == $alias) {
+                    $arr[] = $expr;
+                    continue;
+                }
+                $arr[] = $expr . ' AS ' . $alias;
             } else {
                 if (is_array($field)) {
                     $arr[] = $this->escape($field);
@@ -625,15 +631,15 @@ class SqlFormatter implements iExpressionFormatter
             $sql = "SELECT $select FROM $from";
         }
         //2. where statement
-        if ($expression->has_filter()) {
+        if ($expression->hasFilter()) {
             $sql .= $this->formatWhere($expression);
         }
         //3. group by statement
-        if ($expression->has_groups()) {
+        if ($expression->hasGroups()) {
             $sql .= $this->formatGroupBy($expression);
         }
         //4. order by statement
-        if ($expression->has_orders()) {
+        if ($expression->hasOrders()) {
             $sql .= $this->formatOrderBy($expression);
         }
         return $sql;
@@ -677,17 +683,16 @@ class SqlFormatter implements iExpressionFormatter
             return '';
         }
         $groups = $expression->params['groupby'];
-        Args::check($groups instanceof MemberListExpression, 'Invalid group by expression. Expected member list');
-        if ($groups->count() == 0) {
+        if (count($groups) == 0) {
             return '';
         }
         /**
          * @throws Exception
          */
-        $map = function (SelectableExpression $expr) {
-            return $this->format($expr);
+        $map = function (mixed $expr) {
+            return $this->escape($expr);
         };
-        return ' GROUP BY '.implode(', ', array_map($map, $groups->getArrayCopy()));
+        return ' GROUP BY '.implode(', ', array_map($map, $groups));
     }
 
     /** @noinspection PhpUnusedParameterInspection */

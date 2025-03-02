@@ -19,4 +19,15 @@ class MaxExpression extends MethodCallExpression
         }
         parent::__construct('max', array($arg));
     }
+
+    public function toArray(): array
+    {
+        $arg = current($this->args);
+        if ($arg instanceof DataQueryExpression) {
+            return array('$max' => $arg->toArray());
+        }
+        return array(
+            '$max' => (array)$arg
+        );
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace PHPCentroid\Tests\Query;
 
+use Exception;
 use PHPCentroid\Query\ArithmeticExpression;
 use PHPCentroid\Query\ComparisonExpression;
 use PHPCentroid\Query\CountExpression;
@@ -11,6 +12,7 @@ use PHPCentroid\Query\MethodCallExpression;
 use PHPCentroid\Query\QueryExpression;
 use PHPCentroid\Query\SqlFormatter;
 use PHPUnit\Framework\TestCase;
+use ReflectionException;
 
 class QueryExpressionTest extends TestCase
 {
@@ -62,7 +64,8 @@ class QueryExpressionTest extends TestCase
     }
 
     /**
-     * @throws \ReflectionException
+     * @throws ReflectionException
+     * @throws Exception
      */
     public function test_QueryExpressionSelectToSql()
     {
@@ -76,32 +79,39 @@ class QueryExpressionTest extends TestCase
     }
 
     /**
-     * @throws \ReflectionException
+     * @throws ReflectionException
+     * @throws Exception
      */
     public function test_QueryExpressionSelectAndOrder()
     {
         $q = new QueryExpression();
-        $q->select('id', 'givenName', 'familyName')
-            ->alsoSelect(MemberExpression::create('dateCreated')
-                ->as('created'))
-            ->orderBy('familyName', 'givenName')
+        $q->select('id', 'givenName', 'familyName', array(
+            'created' => '$dateCreated'
+        )) ->orderBy('familyName', 'givenName')
             ->from('Person');
         $formatter = new SqlFormatter();
         $sql = $formatter->format($q);
         $this->assertEquals('SELECT `id`, `givenName`, `familyName`, `dateCreated` AS `created` FROM `Person` ORDER BY `familyName` ASC, `givenName` ASC', $sql, 'Wrong SQL statement');
     }
 
+    /**
+     * @throws ReflectionException
+     * @throws Exception
+     */
     public function test_QueryExpressionSelectAndGroup()
     {
         $q = new QueryExpression();
-        $q->select(new CountExpression(new MemberExpression('id')), 'category')
+        $q->select((new CountExpression(new MemberExpression('id')))->as('total'), 'category')
             ->groupBy('category')
             ->from('Product');
         $formatter = new SqlFormatter();
-        var_dump($q);
-        $this->assertEquals('SELECT COUNT(`id`), `category` FROM `Product` GROUP BY `category`', $formatter->format($q), 'Wrong SQL statement');
+        $this->assertEquals('SELECT COUNT(`id`) AS `total`, `category` FROM `Product` GROUP BY `category`', $formatter->format($q), 'Wrong SQL statement');
     }
 
+    /**
+     * @throws ReflectionException
+     * @throws Exception
+     */
     public function test_QueryExpressionSelectAndWhere()
     {
         $q = new QueryExpression();
@@ -110,11 +120,13 @@ class QueryExpressionTest extends TestCase
             ->either('category')->equal('Desktop')
             ->from('Product');
         $formatter = new SqlFormatter();
-        var_dump($formatter->format($q));
-        var_dump($q);
         $this->assertEquals("SELECT `id`, `name`, `model`, `category` FROM `Product` WHERE ((`category` = 'Laptop') OR (`category` = 'Desktop'))", $formatter->format($q), 'Wrong SQL statement');
     }
 
+    /**
+     * @throws ReflectionException
+     * @throws Exception
+     */
     public function test_QueryExpressionSelectAndPrepare()
     {
         $q = new QueryExpression();
@@ -125,7 +137,6 @@ class QueryExpressionTest extends TestCase
             ->where('price')->lowerThan(500)
             ->from('Product');
         $formatter = new SqlFormatter();
-        var_dump($q);
         $this->assertEquals("SELECT `id`, `name`, `model`, `category` FROM `Product` WHERE (((`category` = 'Laptop') OR (`category` = 'Desktop')) AND (`price` < 500))", $formatter->format($q), 'Wrong SQL statement');
     }
 

@@ -16,9 +16,9 @@ interface iQueryable
      */
     public function alsoSelect(mixed $arg): self;
 
-    public function has_fields();
+    public function hasFields();
 
-    public function has_filter();
+    public function hasFilter();
 
     /**
      * @param SelectableExpression|string $expr,...
