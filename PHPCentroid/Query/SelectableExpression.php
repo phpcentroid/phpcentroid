@@ -34,6 +34,7 @@ abstract class SelectableExpression extends DataQueryExpression
         $this->alias = is_null($alias) ? NULL : trim($alias);
         return $this;
     }
+
     public const ORDER_ASCENDING = 'asc';
     public const ORDER_DESCENDING = 'desc';
     public const OPERATOR_REGEX = '/^(asc|desc)$/i';

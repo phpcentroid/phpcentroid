@@ -4,8 +4,10 @@ namespace PHPCentroid\Tests\Query;
 
 use Exception;
 use PHPCentroid\Query\ClosureParser;
-use PHPCentroid\Query\MemberExpression;
+use PHPCentroid\Query\QueryExpression;
 use PHPCentroid\Query\SqlFormatter;
+use PHPCentroid\Sqlite\SqliteAdapter;
+use PHPCentroid\Tests\App\TestApplication;
 use PHPUnit\Framework\TestCase;
 use ReflectionException;
 
@@ -23,9 +25,6 @@ class ClosureParserTest extends TestCase
         $ast = $parser->parseSelect($closure);
         $this->assertIsArray($ast, 'ClosureParser::parse() should return an array');
         $this->assertCount(3, $ast, 'ClosureParser::parse() should return an array with 3 elements');
-        foreach ($ast as $item) {
-            $this->assertTrue($item instanceof MemberExpression, 'ClosureParser::parse() should return a MemberExpression');
-        }
     }
 
     /**
@@ -44,11 +43,11 @@ class ClosureParserTest extends TestCase
         $select = $parser->parseSelect($closure);
         $this->assertIsArray($select, 'ClosureParser::parse() should return an array');
         $this->assertCount(3, $select, 'ClosureParser::parse() should return an array with 3 elements');
-        foreach ($select as $item) {
-            $this->assertTrue($item instanceof MemberExpression, 'ClosureParser::parse() should return a MemberExpression');
-        }
-        $first = current($select);
-        $this->assertEquals('id', $first->alias, 'MemberExpression::alias should be set to the key of the array');
+        $key = key($select);
+        $value = current($select);
+        $this->assertIsString($key);
+        $this->assertNotEmpty($value);
+        $this->assertEquals('id', $value['$getField']);
     }
 
     /**
@@ -95,11 +94,114 @@ class ClosureParserTest extends TestCase
         };
         $parser = new ClosureParser();
         $filter = $parser->parseFilter($closure);
-        $this->assertIsArray($filter, 'ClosureParser::parseFilter() should return an array');
+        $this->assertIsArray($filter);
         $formatter = new SqlFormatter();
         $sql = $formatter->escape($filter);
         $this->assertIsString($sql, 'SqlFormatter::format() should return a string');
         $this->assertEquals("(`category` = 'Laptops' AND `price` < 1000)", $sql);
-
     }
+
+    /**
+     * @throws Exception
+     */
+    public function testParseOrExpression()
+    {
+        $closure = function ($a) {
+            return $a->category === 'Laptops' || $a->category  == 'Desktops';
+        };
+        $parser = new ClosureParser();
+        $filter = $parser->parseFilter($closure);
+        $this->assertIsArray($filter);
+        $formatter = new SqlFormatter();
+        $sql = $formatter->escape($filter);
+        $this->assertIsString($sql);
+        $this->assertEquals("(`category` = 'Laptops' OR `category` = 'Desktops')", $sql);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function testParseMethodCallExpression()
+    {
+        $closure = function ($a) {
+            return round($a->price, 2) == 1000;
+        };
+        $parser = new ClosureParser();
+        $filter = $parser->parseFilter($closure);
+        $this->assertIsArray($filter);
+        $formatter = new SqlFormatter();
+        $sql = $formatter->escape($filter);
+        $this->assertIsString($sql);
+        $this->assertEquals("ROUND(`price`, 2) = 1000", $sql);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function testParseMemberWithMethodCall()
+    {
+        $closure = function ($a) {
+            return array(
+                'id' => $a->id,
+                'price' => round($a->price, 2),
+            );
+        };
+        $parser = new ClosureParser();
+        $select = $parser->parseSelect($closure);
+        $this->assertIsArray($select);
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function testExecuteSelectWithClosure()
+    {
+        $app = new TestApplication();
+        $database = $app->realpath('db' . DIRECTORY_SEPARATOR . 'local.db');
+        $db = new SqliteAdapter(array('database' => $database));
+        $db->open();
+        $query = (new QueryExpression())->select(
+            function($a) {
+                return array(
+                    'id' => $a->id,
+                    'name' => $a->name,
+                    'description' => $a->description,
+                    'dateCreated' => $a->dateCreated
+                );
+            }
+        )->from('UserData')->where('name')->equal('alexis.rees@example.com');
+        $result = $db->execute($query);
+        $this->assertNotNull($result);
+        $user = (object)$result[0];
+        $this->assertEquals('alexis.rees@example.com', $user->name);
+        $db->close();
+    }
+
+    /**
+     * @throws ReflectionException
+     * @throws Exception
+     */
+    public function testExecuteSelectWithArrayClosure()
+    {
+        $app = new TestApplication();
+        $database = $app->realpath('db' . DIRECTORY_SEPARATOR . 'local.db');
+        $db = new SqliteAdapter(array('database' => $database));
+        $db->open();
+        $query = (new QueryExpression())->select(
+            function($a) {
+                return array(
+                    $a->id,
+                    $a->name,
+                    $a->price,
+                    $a->dateCreated
+                );
+            }
+        )->from('ProductData')->where('name')->equal('Lenovo Yoga 2 Pro');
+        $result = $db->execute($query);
+        $this->assertNotNull($result);
+        $product = (object)$result[0];
+        $this->assertEquals('Lenovo Yoga 2 Pro', $product->name);
+        $db->close();
+    }
+
 }

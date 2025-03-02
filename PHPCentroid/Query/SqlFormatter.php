@@ -128,7 +128,7 @@ class SqlFormatter implements iExpressionFormatter
             $vals = implode(',', array_map(function($val) {
                 return $this->escape($val);
             }, $right));
-            return "{$this->escape($left)} IN ({$vals})";
+            return "{$this->escape($left)} IN ($vals)";
         }
         return "{$this->escape($left)} IN ({$this->escape($right)})";
     }
@@ -142,7 +142,7 @@ class SqlFormatter implements iExpressionFormatter
             $vals = implode(',', array_map(function($val) {
                 return $this->escape($val);
                 }, $right));
-            return "{$this->escape($left)} IN ({$vals})";
+            return "{$this->escape($left)} IN ($vals)";
         }
         return "NOT {$this->escape($left)} IN ({$this->escape($right)})";
     }
@@ -376,6 +376,14 @@ class SqlFormatter implements iExpressionFormatter
      * @throws Exception
      */
     #[SqlFormatterMethod]
+    function ceil($arg): string {
+        return $this->ceiling($arg);
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[SqlFormatterMethod]
     public function round($arg, $decimals = NULL): string {
         if (is_null($decimals)) {
             return "ROUND({$this->escape($arg)}, 0)";
@@ -416,6 +424,22 @@ class SqlFormatter implements iExpressionFormatter
             return "SUBSTRING({$this->escape($arg)}, {$this->escape($pos)} + 1)";
         }
         return "SUBSTRING({$this->escape($arg)}, {$this->escape($pos)} + 1, {$this->escape($length)})";
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[SqlFormatterMethod]
+    public function substr($arg, $pos, $length = NULL): string {
+        return $this->substring($arg, $pos, $length);
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[SqlFormatterMethod]
+    public function getField(string $field): string {
+        return $this->escapeName($field);
     }
 
     /**
@@ -526,7 +550,7 @@ class SqlFormatter implements iExpressionFormatter
             $key = current(array_keys($value));
             // if the key is string and starts with dollar sign
             if (is_string($key) && str_starts_with($key, '$')) {
-                // try to find if the given key is an sql dialect
+                // try to find if the given key is a sql dialect
                 $method = preg_replace('/^\$/m', '', $key);
                 if (array_key_exists($method, $this->methods)) {
                     $val = current(array_values($value));
@@ -570,20 +594,25 @@ class SqlFormatter implements iExpressionFormatter
          * @var EntityExpression $entity
          */
         $entity = $expression->params['entity'];
-
-        /**
-         * @param SelectableExpression $x
-         * @return string
-         * @throws Exception
-         */
-        $map = function(SelectableExpression $x) {
-            if (!isset($x->alias)) {
-                return $this->format($x);
-            }
-            return $this->format($x).' AS '.$this->escapeName($x->alias);
-        };
         $from = $this->format($entity);
-        $select = implode(', ', array_map($map, $expression->params['select']));
+        $fields = $expression->params['select'];
+        $arr = [];
+        foreach ($fields as $key => $field) {
+            if (is_string($key)) {
+                $arr[] = $this->escape($field) . ' AS ' . $this->escapeName($key);
+            } else {
+                if (is_array($field)) {
+                    $arr[] = $this->escape($field);
+                } else if ($field instanceof SelectableExpression) {
+                    if (isset($field->alias)) {
+                        $arr[] = $this->format($field) . ' AS ' . $this->escapeName($field->alias);
+                    } else {
+                        $arr[] = $this->format($field);
+                    }
+                }
+            }
+        }
+        $select = implode(', ', $arr);
         if ($expression->params['fixed']) {
             return "SELECT * FROM (SELECT $select) $from";
         }
@@ -610,6 +639,7 @@ class SqlFormatter implements iExpressionFormatter
         return $sql;
     }
 
+    /** @noinspection PhpUnusedParameterInspection */
     protected function formatUpdate(QueryExpression $expression): mixed {
         throw new Error("Not implemented");
     }
@@ -660,6 +690,7 @@ class SqlFormatter implements iExpressionFormatter
         return ' GROUP BY '.implode(', ', array_map($map, $groups->getArrayCopy()));
     }
 
+    /** @noinspection PhpUnusedParameterInspection */
     protected function formatDelete(QueryExpression $expression): mixed {
         throw new Error("Not implemented");
     }

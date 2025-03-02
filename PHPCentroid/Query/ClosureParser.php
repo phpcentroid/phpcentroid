@@ -7,10 +7,12 @@ namespace PHPCentroid\Query;
 use Closure;
 use Error;
 use PHPCentroid\Common\EventEmitter;
+use PhpParser\Node\Arg;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\Array_;
 use PhpParser\Node\Expr\Assign;
 use PhpParser\Node\Expr\BinaryOp;
+use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Scalar;
@@ -84,10 +86,11 @@ class ClosureParser {
 
     /**
      * @param Closure $closure
-     * @return SelectableExpression[]
+     * @param mixed ...$params
+     * @return array
      * @throws ReflectionException
      */
-    public function parseSelect(Closure $closure): array
+    public function parseSelect(Closure $closure,mixed ...$params): array
     {
         $closureExpr = $this->getClosure($closure);
         $arr = array();
@@ -97,17 +100,10 @@ class ClosureParser {
             $expr = $stmt->expr;
             if ($expr instanceof Array_) {
                 foreach ($expr->items as $item) {
-                    // expect \PhpParser\Node\Expr\PropertyFetch
-                    Args::check($item->value instanceof PropertyFetch, 'Expected a valid member expression');
-                    $member = $this->parseCommon($item->value);
-                    if ($member instanceof SelectableExpression) {
-                        // check if key is a string and add as alias
-                        if ($item->key instanceof String_) {
-                            $member->as($item->key->value);
-                        }
-                        $arr[] = $member;
+                    if ($item->key instanceof String_) {
+                        $arr[$item->key->value] = $this->parseCommon($item->value);
                     } else {
-                        throw new Error('Expected a valid selectable expression');
+                        $arr[] = $this->parseCommon($item->value);
                     }
                 }
             }
@@ -115,7 +111,7 @@ class ClosureParser {
         return $arr;
     }
 
-    public function parseMember(PropertyFetch $member): SelectableExpression
+    public function parseMember(PropertyFetch $member): array
     {
         if ($member->var instanceof PropertyFetch) {
             $qualified = array($member->name->name);
@@ -134,10 +130,10 @@ class ClosureParser {
                     'member' => $qualified[0] // get first element of array
                 );
                 $this->resolvingMember->emit($member);
-                if ($event->member instanceof SelectableExpression) {
+                if (is_array($event->member)) {
                     return $event->member;
                 }
-                return new MemberExpression($event->member);
+                return array('$getField' => $event->member);
             }
             $event = (object)array(
                 'target' => $this,
@@ -146,7 +142,7 @@ class ClosureParser {
             );
             $this->resolvingJoinMember->emit($event);
             // member should be an instance of selectable expression
-            if ($event->member instanceof SelectableExpression) {
+            if (is_array($event->member)) {
                 return $event->member;
             }
             // or a string
@@ -155,12 +151,12 @@ class ClosureParser {
             $member = explode('.', $event->member);
             // for creating a member expression
             if (size($member) == 1) {
-                return new MemberExpression($member[0]);
+                return array('$getField' => $member[0]);
             }
             // with alias
-            return (new MemberExpression($member[1]))->from($member[0]);
+            return array('$getField' => implode(',', $member));
         } else if ($member->var instanceof Variable) {
-            return new MemberExpression($member->name->name);
+            return array('$getField' => $member->name->name);
         }
         throw new Exception('Invalid member expression');
     }
@@ -173,6 +169,26 @@ class ClosureParser {
             return $expr->value;
         }
         throw new Exception('Unsupported scalar expression');
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function parseMethodCall(Expr\FuncCall $expr): array {
+        $args = array_map(function(Arg $arg) {
+            return $this->parseCommon($arg->value);
+        }, $expr->args);
+        $name = $expr->name->name;
+        $event = (object)array(
+            'target' => $this,
+            'method' => $name
+        );
+        $this->resolvingMethod->emit($event);
+        if (is_array($event->method)) {
+            return $event->method;
+        }
+        $escaped = '$' . $name;
+        return array($escaped => $args);
     }
 
     public function parseBinary(BinaryOp $expr): array {
@@ -224,6 +240,8 @@ class ClosureParser {
             return $this->parseBinary($expr);
         } else if ($expr instanceof Scalar) {
             return $this->parseLiteral($expr);
+        } else if ($expr instanceof Expr\FuncCall) {
+            return $this->parseMethodCall($expr);
         }
         throw new Error("An expression of type " . get_class($expr) . " is not supported");
     }

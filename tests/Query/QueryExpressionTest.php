@@ -61,6 +61,9 @@ class QueryExpressionTest extends TestCase
         $this->assertMatchesRegularExpression('/^\(category eq \'Laptop\' or category eq \'Desktop\'\)$/', (string)$expr, 'LogicalExpression returns wrong string');
     }
 
+    /**
+     * @throws \ReflectionException
+     */
     public function test_QueryExpressionSelectToSql()
     {
         $q = new QueryExpression();
@@ -72,6 +75,9 @@ class QueryExpressionTest extends TestCase
         $this->assertEquals('SELECT `id`, `givenName`, `familyName`, `dateCreated` AS `created` FROM `Person`', $formatter->format($q), 'Wrong SQL statement');
     }
 
+    /**
+     * @throws \ReflectionException
+     */
     public function test_QueryExpressionSelectAndOrder()
     {
         $q = new QueryExpression();

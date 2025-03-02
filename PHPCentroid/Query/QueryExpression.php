@@ -12,6 +12,7 @@ namespace PHPCentroid\Query;
 
 use PHPCentroid\Common\Args;
 use UnexpectedValueException;
+use Closure;
 
 class QueryExpression implements iQueryable
 {
@@ -52,11 +53,18 @@ class QueryExpression implements iQueryable
     }
 
     /**
-     * @param string|SelectableExpression $arg,...
+     * @param string|SelectableExpression|Closure ...$args
      * @return $this
+     * @throws \ReflectionException
      */
-    public function select($arg): iQueryable
+    public function select(...$args): iQueryable
     {
+        if ($args[0] instanceof Closure) {
+            $closure = array_shift($args);
+            $parser = new ClosureParser();
+            $this->params['select'] = $parser->parseSelect($closure, ...$args);
+            return $this;
+        }
         $arguments = func_get_args();
         $this->params['select'] = array();
         foreach ($arguments as $argument) {
