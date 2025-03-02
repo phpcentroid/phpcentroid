@@ -11,9 +11,12 @@ namespace PHPCentroid\Query;
 
 use Closure;
 use Error;
+use Exception;
 use PHPCentroid\Common\Args;
 use ReflectionClass;
+use ReflectionException;
 use ReflectionMethod;
+use function _\size;
 
 class SqlFormatter implements iExpressionFormatter
 {
@@ -31,45 +34,200 @@ class SqlFormatter implements iExpressionFormatter
             return current($x->getAttributes(SqlFormatterMethod::class)) !== FALSE;
         });
         $keys = array_map(function($method) {
-            return$method->getName();
+            $formatterMethod = current($method->getAttributes(SqlFormatterMethod::class));
+            $name = $formatterMethod->newInstance()->getName();
+            if ($name) {
+                return $name;
+            }
+            return $method->getName();
         }, $methods);
-        $this->methods = array_combine($keys, array_map(function($method) {
+        $this->methods = array_combine($keys, array_map(/**
+         * @throws ReflectionException
+         */ function($method) {
             return $method->getClosure($this);
         }, $methods));
         $this->nameValidator = new ObjectNameValidator();
     }
 
+    /**
+     * @throws Exception
+     */
+    #[SqlFormatterMethod]
+    public function eq($left, $right): string {
+        if (is_null($right)) {
+            return "{$this->escape($left)} IS NULL";
+        }
+        return "{$this->escape($left)} = {$this->escape($right)}";
+    }
 
+    /**
+     * @throws Exception
+     */
+    #[SqlFormatterMethod]
+    public function ne($left, $right): string {
+        if (is_null($right)) {
+            return "{$this->escape($left)} IS NULL";
+        }
+        return "{$this->escape($left)} <> {$this->escape($right)}";
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[SqlFormatterMethod]
+    public function gt($left, $right): string {
+        return "{$this->escape($left)} > {$this->escape($right)}";
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[SqlFormatterMethod]
+    public function lt($left, $right): string {
+        return "{$this->escape($left)} < {$this->escape($right)}";
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[SqlFormatterMethod]
+    public function gte($left, $right): string {
+        return "{$this->escape($left)} >= {$this->escape($right)}";
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[SqlFormatterMethod]
+    public function ge($left, $right): string {
+        return "{$this->escape($left)} >= {$this->escape($right)}";
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[SqlFormatterMethod]
+    public function le($left, $right): string {
+        return "{$this->escape($left)} <= {$this->escape($right)}";
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[SqlFormatterMethod]
+    public function lte($left, $right): string {
+        return "{$this->escape($left)} <= {$this->escape($right)}";
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[SqlFormatterMethod]
+    public function in($left, $right): string {
+        if (is_array($right)) {
+            $vals = implode(',', array_map(function($val) {
+                return $this->escape($val);
+            }, $right));
+            return "{$this->escape($left)} IN ({$vals})";
+        }
+        return "{$this->escape($left)} IN ({$this->escape($right)})";
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[SqlFormatterMethod]
+    public function nin($left, $right): string {
+        if (is_array($right)) {
+            $vals = implode(',', array_map(function($val) {
+                return $this->escape($val);
+                }, $right));
+            return "{$this->escape($left)} IN ({$vals})";
+        }
+        return "NOT {$this->escape($left)} IN ({$this->escape($right)})";
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[SqlFormatterMethod('and')]
+    public function logicalAnd(...$args): string {
+        if (size($args) < 2) {
+            throw new Exception("Missing arguments");
+        }
+        return "(" . implode(' AND ', array_map(/**
+             * @throws Exception
+             */ function($val) {
+            return $this->escape($val);
+            }, $args)) . ")";
+    }
+
+    /**
+     * @param ...$args
+     * @return string
+     * @throws Exception
+     */
+    #[SqlFormatterMethod('or')]
+    public function logicalOr(...$args): string {
+        if (size($args) < 2) {
+            throw new Exception("Missing arguments");
+        }
+        return "(" . implode(' OR ', array_map(function($val) {
+            return $this->escape($val);
+            }, $args)) . ")";
+    }
+
+    /**
+     * @throws Exception
+     */
     #[SqlFormatterMethod]
     public function count($arg): string {
         return "COUNT({$this->format($arg)})";
     }
 
+    /**
+     * @throws Exception
+     */
     #[SqlFormatterMethod]
     public function min($arg): string {
         return "MIN({$this->escape($arg)})";
     }
 
+    /**
+     * @throws Exception
+     */
     #[SqlFormatterMethod]
     public function max($arg): string {
         return "MAX({$this->escape($arg)})";
     }
 
+    /**
+     * @throws Exception
+     */
     #[SqlFormatterMethod]
     public function sum($arg): string {
         return "SUM({$this->escape($arg)})";
     }
 
+    /**
+     * @throws Exception
+     */
     #[SqlFormatterMethod]
     public function avg($arg): string {
         return "AVG({$this->escape($arg)})";
     }
 
+    /**
+     * @throws Exception
+     */
     #[SqlFormatterMethod]
     public function length($arg): string {
         return "LEN({$this->escape($arg)})";
     }
 
+    /**
+     * @throws Exception
+     */
     #[SqlFormatterMethod]
     public function startsWith($arg, $search): string {
         $s0 = $this->escape($arg);
@@ -80,6 +238,9 @@ class SqlFormatter implements iExpressionFormatter
         return "($s0 REGEXP $s1)";
     }
 
+    /**
+     * @throws Exception
+     */
     #[SqlFormatterMethod]
     public function endsWith($arg, $search): string {
         $s0 = $this->escape($arg);
@@ -90,6 +251,9 @@ class SqlFormatter implements iExpressionFormatter
         return "($s0 REGEXP $s1)";
     }
 
+    /**
+     * @throws Exception
+     */
     #[SqlFormatterMethod]
     public function trim($arg): string {
         return "TRIM({$this->escape($arg)})";
@@ -97,76 +261,120 @@ class SqlFormatter implements iExpressionFormatter
 
     #[SqlFormatterMethod]
     public function concat(...$arg): string {
-        return "CONCAT(".implode(', ', array_map(function($x) {
+        return "CONCAT(".implode(', ', array_map(/**
+             * @throws Exception
+             */ function($x) {
                 return $this->escape($x);
             }, $arg)).")";
     }
 
+    /**
+     * @throws Exception
+     */
     #[SqlFormatterMethod]
     public function indexOf($arg0, $search): string {
         return "LOCATE({$this->escape($arg0)}, {$this->escape($search)})";
     }
 
+    /**
+     * @throws Exception
+     */
     #[SqlFormatterMethod]
     public function toLower($arg): string {
         return "LOWER({$this->escape($arg)})";
     }
 
+    /**
+     * @throws Exception
+     */
     #[SqlFormatterMethod]
     public function toUpper($arg): string {
         return "UPPER({$this->escape($arg)})";
     }
 
+    /**
+     * @throws Exception
+     */
     #[SqlFormatterMethod]
     public function contains($arg, $search): string {
         return "({$this->escape($arg)} REGEXP {$this->escape($search)})";
     }
 
+    /**
+     * @throws Exception
+     */
     #[SqlFormatterMethod]
     public function day($arg): string {
         return "DAY({$this->escape($arg)})";
     }
 
+    /**
+     * @throws Exception
+     */
     #[SqlFormatterMethod]
     public function month($arg): string {
         return "MONTH({$this->escape($arg)})";
     }
 
+    /**
+     * @throws Exception
+     */
     #[SqlFormatterMethod]
     public function year($arg): string {
         return "YEAR({$this->escape($arg)})";
     }
 
+    /**
+     * @throws Exception
+     */
     #[SqlFormatterMethod]
     public function hour($arg): string {
         return "HOUR({$this->escape($arg)})";
     }
 
+    /**
+     * @throws Exception
+     */
     #[SqlFormatterMethod]
     function minute($arg): string {
         return "MINUTE({$this->escape($arg)})";
     }
 
+    /**
+     * @throws Exception
+     */
     #[SqlFormatterMethod]
     function second($arg): string {
         return "SECOND({$this->escape($arg)})";
     }
 
+    /**
+     * @throws Exception
+     */
     #[SqlFormatterMethod]
     public function date($arg): string {
         return "DATE({$this->escape($arg)})";
     }
 
+    /**
+     * @throws Exception
+     */
     #[SqlFormatterMethod]
     public function floor($arg): string {
         return "FLOOR({$this->escape($arg)})";
     }
 
+    /**
+     * @throws Exception
+     */
     #[SqlFormatterMethod]
     function ceiling($arg): string {
         return "CEILING({$this->escape($arg)})";
     }
 
+    /**
+     * @throws Exception
+     */
     #[SqlFormatterMethod]
     public function round($arg, $decimals = NULL): string {
         if (is_null($decimals)) {
@@ -175,21 +383,33 @@ class SqlFormatter implements iExpressionFormatter
         return "ROUND({$this->escape($arg)}, {$this->escape($decimals)})";
     }
 
+    /**
+     * @throws Exception
+     */
     #[SqlFormatterMethod]
     public function bit($arg1, $arg2): string {
         return "({$this->escape($arg1)} & {$this->escape($arg2)})";
     }
 
+    /**
+     * @throws Exception
+     */
     #[SqlFormatterMethod]
     public function regex($arg, $pattern): string {
         return "({$this->escape($arg)} REGEXP {$this->escape($pattern)})";
     }
 
+    /**
+     * @throws Exception
+     */
     #[SqlFormatterMethod]
     public function text($arg, $pattern): string {
         return "({$this->escape($arg)} REGEXP {$this->escape($pattern)})";
     }
 
+    /**
+     * @throws Exception
+     */
     #[SqlFormatterMethod]
     public function substring($arg, $pos, $length = NULL): string {
         if (is_null($length)) {
@@ -201,6 +421,7 @@ class SqlFormatter implements iExpressionFormatter
     /**
      * @param ComparisonExpression $expr
      * @return string
+     * @throws Exception
      */
     protected function formatComparison(ComparisonExpression $expr): string {
         $left = $this->format($expr->left);
@@ -246,6 +467,7 @@ class SqlFormatter implements iExpressionFormatter
     /**
      * @param ArithmeticExpression $expr
      * @return string
+     * @throws Exception
      */
     protected function formatArithmetic(ArithmeticExpression $expr): string {
         $left = $this->format($expr->left);
@@ -254,17 +476,24 @@ class SqlFormatter implements iExpressionFormatter
             case 'add':
                 return "($left + $right)";
             case 'mul':
+            case 'multiply':
                 return "($left * $right)";
             case 'div':
+            case 'divide':
                 return "($left / $right)";
             case 'sub':
+            case 'subtract':
                 return "($left - $right)";
             case 'mod':
+            case 'modulo':
                 return "($left % $right)";
         }
         throw new Error("Unsupported arithmetic operator");
     }
 
+    /**
+     * @throws Exception
+     */
     protected function formatLimitSelect($expr): string {
         $sql = $this->formatSelect($expr);
         if (array_key_exists('top', $expr->params) && is_numeric($expr->params['top'])) {
@@ -285,9 +514,34 @@ class SqlFormatter implements iExpressionFormatter
         return $sql;
     }
 
+    /**
+     * @throws Exception
+     */
     public function escape(mixed $value): string {
         if ($value instanceof DataQueryExpression) {
             return $this->format($value);
+        }
+        if (is_array($value) && size($value) == 1) {
+            // get first key
+            $key = current(array_keys($value));
+            // if the key is string and starts with dollar sign
+            if (is_string($key) && str_starts_with($key, '$')) {
+                // try to find if the given key is an sql dialect
+                $method = preg_replace('/^\$/m', '', $key);
+                if (array_key_exists($method, $this->methods)) {
+                    $val = current(array_values($value));
+                    // if arguments is an array
+                    if (is_array($val)) {
+                        // call dialect method
+                        return call_user_func_array($this->methods[$method], $val);
+                    }
+                    return call_user_func_array($this->methods[$method], array($val));
+                }
+            }
+        }
+        // use the magic dollar sign for escaping object names
+        if (is_string($value) && str_starts_with($value, '$')) {
+            return $this->escapeName(substr($value, 1));
         }
         return DataQueryExpression::escape($value);
     }
@@ -296,6 +550,9 @@ class SqlFormatter implements iExpressionFormatter
         return $this->nameValidator;
     }
 
+    /**
+     * @throws Exception
+     */
     public function escapeName(string $name): string {
         return $this->getNameValidator()->escape($name, $this->settings['nameFormat']);
     }
@@ -303,6 +560,7 @@ class SqlFormatter implements iExpressionFormatter
     /**
      * @param QueryExpression $expression
      * @return string
+     * @throws Exception
      */
     protected function formatSelect(QueryExpression $expression): string {
         Args::check(array_key_exists('select', $expression->params) && is_array($expression->params['select']), "Invalid select expression. Expected array");
@@ -316,6 +574,7 @@ class SqlFormatter implements iExpressionFormatter
         /**
          * @param SelectableExpression $x
          * @return string
+         * @throws Exception
          */
         $map = function(SelectableExpression $x) {
             if (!isset($x->alias)) {
@@ -373,6 +632,9 @@ class SqlFormatter implements iExpressionFormatter
         if ($orders->count() == 0) {
             return '';
         }
+        /**
+         * @throws Exception
+         */
         $map = function (SelectableExpression $expr) {
             return $this->format($expr).(isset($expr->order) ? ($expr->order=='desc' ? ' DESC' : ' ASC') : ' ASC');
         };
@@ -389,6 +651,9 @@ class SqlFormatter implements iExpressionFormatter
         if ($groups->count() == 0) {
             return '';
         }
+        /**
+         * @throws Exception
+         */
         $map = function (SelectableExpression $expr) {
             return $this->format($expr);
         };
@@ -402,6 +667,7 @@ class SqlFormatter implements iExpressionFormatter
     /**
      * @param QueryExpression $expression
      * @return string
+     * @throws Exception
      */
     protected function formatWhere(QueryExpression $expression): string {
         $expr = $expression->get_filter();
@@ -420,7 +686,9 @@ class SqlFormatter implements iExpressionFormatter
     protected function formatLogical(mixed $expr): string {
 
         Args::check($expr instanceof LogicalExpression, 'Invalid argument. Expected logical expression');
-        $args = array_map(function($x) {
+        $args = array_map(/**
+         * @throws Exception
+         */ function($x) {
             return $this->format($x);
         }, $expr->args);
         switch ($expr->operator) {
@@ -439,6 +707,7 @@ class SqlFormatter implements iExpressionFormatter
     /**
      * @param MethodCallExpression $expr
      * @return mixed
+     * @throws Exception
      */
     protected function formatMethod(MethodCallExpression $expr): mixed {
         $args = array_map(function($arg) {
@@ -461,6 +730,11 @@ class SqlFormatter implements iExpressionFormatter
         $this->entityResolver = $closure;
     }
 
+    /**
+     * @param mixed $expr
+     * @return string
+     * @throws Exception
+     */
     protected function formatMember(mixed $expr): string {
 
         if (is_null($expr->entity))
@@ -469,6 +743,9 @@ class SqlFormatter implements iExpressionFormatter
                 return $this->formatEntity($expr->entity).'.'.$this->escapeName($expr->name);
     }
 
+    /**
+     * @throws Exception
+     */
     protected function formatEntity($expr): string {
         Args::check(is_string($expr) || ($expr instanceof EntityExpression), 'Invalid argument. Expected string or an entity expression');
         if (is_string($expr)) {
@@ -489,6 +766,7 @@ class SqlFormatter implements iExpressionFormatter
      * @param mixed $expr
      * @param string $format
      * @return mixed
+     * @throws Exception
      */
     public function format($expr, $format = NULL): mixed {
         if ($expr instanceof EntityExpression) {

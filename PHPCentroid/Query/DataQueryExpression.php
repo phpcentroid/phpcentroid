@@ -22,7 +22,7 @@ abstract class DataQueryExpression
         return $this->to_str();
     }
 
-    public static function escape($value = null) {
+    public static function escape($value = null): mixed {
         //0. null
         if (is_null($value))
             return 'null';
@@ -49,6 +49,11 @@ abstract class DataQueryExpression
         }
         //5. string
         else if (is_string($value)) {
+            // an important exception here:
+            // remove already escaped dollar sign at the beggining of the string
+            if (preg_match('/^\\$/', $value)) {
+                return "'" . substr($value, 1) . "'";
+            }
             return "'$value'";
         }
         //6. query expression

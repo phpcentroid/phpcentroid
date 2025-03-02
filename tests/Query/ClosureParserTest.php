@@ -2,8 +2,10 @@
 
 namespace PHPCentroid\Tests\Query;
 
+use Exception;
 use PHPCentroid\Query\ClosureParser;
 use PHPCentroid\Query\MemberExpression;
+use PHPCentroid\Query\SqlFormatter;
 use PHPUnit\Framework\TestCase;
 use ReflectionException;
 
@@ -18,7 +20,7 @@ class ClosureParserTest extends TestCase
             return array($a->id, $a->name, $a->age);
         };
         $parser = new ClosureParser();
-        $ast = $parser->parse($closure);
+        $ast = $parser->parseSelect($closure);
         $this->assertIsArray($ast, 'ClosureParser::parse() should return an array');
         $this->assertCount(3, $ast, 'ClosureParser::parse() should return an array with 3 elements');
         foreach ($ast as $item) {
@@ -39,7 +41,7 @@ class ClosureParserTest extends TestCase
             );
         };
         $parser = new ClosureParser();
-        $select = $parser->parse($closure);
+        $select = $parser->parseSelect($closure);
         $this->assertIsArray($select, 'ClosureParser::parse() should return an array');
         $this->assertCount(3, $select, 'ClosureParser::parse() should return an array with 3 elements');
         foreach ($select as $item) {
@@ -60,7 +62,44 @@ class ClosureParserTest extends TestCase
             );
         };
         $parser = new ClosureParser();
-        $select = $parser->parse($closure);
-        $this->assertIsArray($select, 'ClosureParser::parse() should return an array');
+        $select = $parser->parseSelect($closure);
+        $this->assertIsArray($select, 'ClosureParser::parseSelect() should return an array');
+    }
+
+    /**
+     * @throws ReflectionException
+     * @throws Exception
+     */
+    public function testParseFilterExpr()
+    {
+        $closure = function ($a) {
+            return $a->name === 'admin';
+        };
+        $parser = new ClosureParser();
+        $filter = $parser->parseFilter($closure);
+        $this->assertIsArray($filter, 'ClosureParser::parseFilter() should return an array');
+        $formatter = new SqlFormatter();
+        $sql = $formatter->escape($filter);
+        $this->assertIsString($sql, 'SqlFormatter::format() should return a string');
+        $this->assertEquals("`name` = 'admin'", $sql);
+
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function testParseAndExpression()
+    {
+        $closure = function ($a) {
+            return $a->category === 'Laptops' && $a->price < 1000;
+        };
+        $parser = new ClosureParser();
+        $filter = $parser->parseFilter($closure);
+        $this->assertIsArray($filter, 'ClosureParser::parseFilter() should return an array');
+        $formatter = new SqlFormatter();
+        $sql = $formatter->escape($filter);
+        $this->assertIsString($sql, 'SqlFormatter::format() should return a string');
+        $this->assertEquals("(`category` = 'Laptops' AND `price` < 1000)", $sql);
+
     }
 }

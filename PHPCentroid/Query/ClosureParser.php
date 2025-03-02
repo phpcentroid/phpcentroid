@@ -1,4 +1,6 @@
-<?php /** @noinspection PhpUnusedAliasInspection */
+<?php /** @noinspection PhpPropertyOnlyWrittenInspection */
+
+/** @noinspection PhpUnusedAliasInspection */
 
 namespace PHPCentroid\Query;
 
@@ -8,7 +10,10 @@ use PHPCentroid\Common\EventEmitter;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\Array_;
 use PhpParser\Node\Expr\Assign;
+use PhpParser\Node\Expr\BinaryOp;
 use PhpParser\Node\Expr\PropertyFetch;
+use PhpParser\Node\Expr\Variable;
+use PhpParser\Node\Scalar;
 use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\Stmt;
 use PhpParser\Node\Stmt\Expression;
@@ -28,8 +33,8 @@ class ClosureParser {
     private Parser $parser;
     private EventEmitter $resolvingMember;
     private EventEmitter $resolvingJoinMember;
+    /** @noinspection PhpPropertyOnlyWrittenInspection */
     private EventEmitter $resolvingMethod;
-    private Expr\Closure $current;
 
     public function __construct()
     {
@@ -40,14 +45,9 @@ class ClosureParser {
     }
 
     /**
-     * Parse a closure
-     * @param mixed $closure
-     * @return array
      * @throws ReflectionException
      */
-    public function parse(Closure $closure): array
-    {
-        // get closure code
+    protected function getClosure(Closure $closure): Expr\Closure {
         $reflector = new ReflectionClosure($closure);
         $code = '<?php $body = ' . $reflector->getCode() . ';';
         // and parse
@@ -59,27 +59,39 @@ class ClosureParser {
                 $stmt = $stmt->expr;
             }
             if ($stmt instanceof Expr\Closure) {
-                // set current closure
-                $this->current = $stmt;
-                $expr = current($stmt->getStmts());
-                if ($expr instanceof Stmt\Return_) {
-                    if ($expr->expr instanceof Array_) {
-                        return $this->parseSelect($stmt);
-                    }
-                }
+                return $stmt;
             }
         }
-        throw new Error('Invalid closure');
+        throw new ReflectionException('Invalid closure format');
     }
 
     /**
-     * @param Expr\Closure $closure
-     * @return SelectableExpression[]
+     * @throws ReflectionException
      */
-    public function parseSelect(Expr\Closure $closure): array
-    {
+    public function parseFilter(Closure $closure): array {
+        $closureExpr = $this->getClosure($closure);
         $arr = array();
-        $stmts = $closure->getStmts();
+        $stmts = $closureExpr->getStmts();
+        $stmt = current($stmts);
+        if ($stmt instanceof Stmt\Return_) {
+            $expr = $stmt->expr;
+            if ($expr instanceof BinaryOp) {
+                return $this->parseCommon($expr);
+            }
+        }
+        return $arr;
+    }
+
+    /**
+     * @param Closure $closure
+     * @return SelectableExpression[]
+     * @throws ReflectionException
+     */
+    public function parseSelect(Closure $closure): array
+    {
+        $closureExpr = $this->getClosure($closure);
+        $arr = array();
+        $stmts = $closureExpr->getStmts();
         $stmt = current($stmts);
         if ($stmt instanceof Stmt\Return_) {
             $expr = $stmt->expr;
@@ -103,7 +115,7 @@ class ClosureParser {
         return $arr;
     }
 
-    public function parseMember(PropertyFetch $member): MemberExpression
+    public function parseMember(PropertyFetch $member): SelectableExpression
     {
         if ($member->var instanceof PropertyFetch) {
             $qualified = array($member->name->name);
@@ -129,14 +141,75 @@ class ClosureParser {
             }
             $event = (object)array(
                 'target' => $this,
-                'member' => array_slice($qualified, -2),
-                'qualifiedMember' => implode('.', $qualified)
+                'member' => implode('.', array_slice($qualified, -2)),
+                'fullyQualifiedMember' => implode('.', $qualified)
             );
             $this->resolvingJoinMember->emit($event);
+            // member should be an instance of selectable expression
             if ($event->member instanceof SelectableExpression) {
                 return $event->member;
             }
-            return new MemberExpression($event->member);
+            // or a string
+            Args::check(is_string($event->member), 'Invalid member expression. Expected an instance of selectable expression or a string.');
+            // split member
+            $member = explode('.', $event->member);
+            // for creating a member expression
+            if (size($member) == 1) {
+                return new MemberExpression($member[0]);
+            }
+            // with alias
+            return (new MemberExpression($member[1]))->from($member[0]);
+        } else if ($member->var instanceof Variable) {
+            return new MemberExpression($member->name->name);
+        }
+        throw new Exception('Invalid member expression');
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function parseLiteral(Scalar $expr): mixed {
+        if (property_exists($expr, 'value')) {
+            return $expr->value;
+        }
+        throw new Exception('Unsupported scalar expression');
+    }
+
+    public function parseBinary(BinaryOp $expr): array {
+        $binaryOperator = $expr->getOperatorSigil();
+        $left = $this->parseCommon($expr->left);
+        $right = $this->parseCommon($expr->right);
+        /** @noinspection PhpSwitchCanBeReplacedWithMatchExpressionInspection */
+        switch ($binaryOperator) {
+            case '==':
+            case '===':
+                return array('$eq' => array($left, $right));
+            case '!=':
+                return array('$ne' => array($left, $right));
+            case '>':
+                return array('$gt' => array($left, $right));
+            case '<':
+                return array('$lt' => array($left, $right));
+            case '>=':
+                return array('$ge' => array($left, $right));
+            case '<=':
+                return array('$le' => array($left, $right));
+            case '&&':
+                return array('$and' => array($left, $right));
+            case '||':
+                return array('$or' => array($left, $right));
+            case '+':
+                return array('$add' => array($left, $right));
+            case '-':
+                return array('$subtract' => array($left, $right));
+            case '*':
+                return array('$multiply' => array($left, $right));
+            case '/':
+                return array('$divide' => array($left, $right));
+            case '%':
+                return array('$bit' => array($left, $right));
+            default:
+                throw new Error("Unsupported operator " . $binaryOperator);
         }
     }
 
@@ -144,9 +217,13 @@ class ClosureParser {
      * @param Expr $expr
      * @return DataQueryExpression
      */
-    public function parseCommon(Expr $expr): DataQueryExpression {
+    public function parseCommon(Expr $expr): mixed {
         if ($expr instanceof PropertyFetch) {
             return $this->parseMember($expr);
+        } else if ($expr instanceof BinaryOp) {
+            return $this->parseBinary($expr);
+        } else if ($expr instanceof Scalar) {
+            return $this->parseLiteral($expr);
         }
         throw new Error("An expression of type " . get_class($expr) . " is not supported");
     }
