@@ -35,7 +35,7 @@ class QueryExpression implements iQueryable
     /**
      * @var ?string
      */
-    private ?string $__prepared_lop;
+    private ?string $__prepared_lop = NULL;
     /**
      * @var ?JoinExpression
      */
@@ -350,7 +350,7 @@ class QueryExpression implements iQueryable
     {
         if (is_null($this->params['filter']))
             return $this;
-        if (is_null($this->__prepared_lop)) {
+        if (isset($this->__prepared_lop)) {
             $this->__prepared_lop = LogicalExpression::OPERATOR_AND;
         }
         if (isset($this->params['prepared'])) {
