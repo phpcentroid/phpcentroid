@@ -204,4 +204,57 @@ class ClosureParserTest extends TestCase
         $db->close();
     }
 
+    /**
+     * @throws ReflectionException
+     * @throws Exception
+     */
+    public function testExecuteFilterClosure()
+    {
+        $app = new TestApplication();
+        $database = $app->realpath('db' . DIRECTORY_SEPARATOR . 'local.db');
+        $db = new SqliteAdapter(array('database' => $database));
+        $db->open();
+        $query = (new QueryExpression())->select(
+            function($a) {
+                return array(
+                    $a->id,
+                    $a->name,
+                    $a->price,
+                    $a->dateCreated
+                );
+            }
+        )->from('ProductData')->where(function($a, $name) {
+            return $a->name == $name;
+        }, 'Lenovo Yoga 2 Pro');
+        $result = $db->execute($query);
+        $this->assertNotNull($result);
+        $product = (object)$result[0];
+        $this->assertEquals('Lenovo Yoga 2 Pro', $product->name);
+        $db->close();
+    }
+
+    /**
+     * @throws ReflectionException
+     * @throws Exception
+     */
+    public function testExecuteSelectWithSingleField()
+    {
+        $app = new TestApplication();
+        $database = $app->realpath('db' . DIRECTORY_SEPARATOR . 'local.db');
+        $db = new SqliteAdapter(array('database' => $database));
+        $db->open();
+        $query = (new QueryExpression())->select(
+            function($a) {
+                return $a->id;
+            }
+        )->from('ProductData')->where(function($a, $name) {
+            return $a->name == $name;
+        }, 'Lenovo Yoga 2 Pro');
+        $result = $db->execute($query);
+        $this->assertNotNull($result);
+        $product = (object)$result[0];
+        $this->assertNotEmpty($product->id);
+        $db->close();
+    }
+
 }

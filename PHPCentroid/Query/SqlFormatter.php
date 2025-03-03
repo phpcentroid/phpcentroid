@@ -548,6 +548,9 @@ class SqlFormatter implements iExpressionFormatter
         if (is_array($value) && size($value) == 1) {
             // get first key
             $key = current(array_keys($value));
+            if ($key == '$literal') {
+                return $this->escape($value);
+            }
             // if the key is string and starts with dollar sign
             if (is_string($key) && str_starts_with($key, '$')) {
                 // try to find if the given key is a sql dialect
@@ -711,10 +714,11 @@ class SqlFormatter implements iExpressionFormatter
             return '';
         }
         if ($expr instanceof ComparisonExpression) {
-            return ' WHERE '.$this->formatComparison($expr);
-        }
-        else if ($expr instanceof LogicalExpression) {
-            return ' WHERE '.$this->formatLogical($expr);
+            return ' WHERE ' . $this->formatComparison($expr);
+        } else if ($expr instanceof LogicalExpression) {
+            return ' WHERE ' . $this->formatLogical($expr);
+        } else if (is_array($expr)) {
+            return ' WHERE ' . $this->escape($expr);
         }
         throw new Error("Invalid filter expression. Expected a logical or comparison expression");
     }

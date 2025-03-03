@@ -171,7 +171,7 @@ class QueryExpression implements iQueryable
     }
 
     /**
-     * @param SelectableExpression|string $expr,...
+     * @param SelectableExpression|string ...$expr
      * @return $this
      */
     public function orderBy($expr): iQueryable {
@@ -289,11 +289,14 @@ class QueryExpression implements iQueryable
     }
 
     /**
-     * @param mixed $arg
-     * @return $this
+     * @throws ReflectionException
      */
-    public function where(mixed $arg): iQueryable {
-        Args::not_null($arg,'Filter attribute');
+    public function where(mixed $arg, mixed ...$params): iQueryable {
+        if ($arg instanceof Closure) {
+            $parser = new ClosureParser();
+            $this->params['filter'] = $parser->parseFilter($arg, ...$params);
+            return $this;
+        }
         Args::check(is_string($arg) || ($arg instanceof SelectableExpression),'Invalid argument. Expected string or a valid selectable expression');
         if (is_string($arg)) {
             $this->__left = new MemberExpression($arg);

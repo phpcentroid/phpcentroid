@@ -37,6 +37,7 @@ class ClosureParser {
     private EventEmitter $resolvingJoinMember;
     /** @noinspection PhpPropertyOnlyWrittenInspection */
     private EventEmitter $resolvingMethod;
+    private array $params;
 
     public function __construct()
     {
@@ -67,12 +68,23 @@ class ClosureParser {
         throw new ReflectionException('Invalid closure format');
     }
 
+    protected function getParams(Expr\Closure $closure, array $values): array {
+        $params = $closure->params;
+        $arr = array();
+        foreach ($params as $index => $param) {
+            if ($index > 0) {
+                $arr += [ $param->var->name => $values[$index - 1] ];
+            }
+        }
+        return $arr;
+    }
+
     /**
      * @throws ReflectionException
      */
-    public function parseFilter(Closure $closure): array {
+    public function parseFilter(Closure $closure,mixed ...$params): array {
         $closureExpr = $this->getClosure($closure);
-        $arr = array();
+        $this->params = $this->getParams($closureExpr, $params);
         $stmts = $closureExpr->getStmts();
         $stmt = current($stmts);
         if ($stmt instanceof Stmt\Return_) {
@@ -81,7 +93,7 @@ class ClosureParser {
                 return $this->parseCommon($expr);
             }
         }
-        return $arr;
+        throw new Exception('Invalid filter closure. Expected a closure with a binary expression.');
     }
 
     /**
@@ -106,6 +118,8 @@ class ClosureParser {
                         $arr[] = $this->parseCommon($item->value);
                     }
                 }
+            } else if ($expr instanceof PropertyFetch) {
+                $arr[$expr->name->name] = $this->parseCommon($expr);
             }
         }
         return $arr;
@@ -229,6 +243,11 @@ class ClosureParser {
         }
     }
 
+    public function parseVariable(Variable $expr): mixed
+    {
+        return $this->params[$expr->name];
+    }
+
     /**
      * @param Expr $expr
      * @return DataQueryExpression
@@ -242,6 +261,8 @@ class ClosureParser {
             return $this->parseLiteral($expr);
         } else if ($expr instanceof Expr\FuncCall) {
             return $this->parseMethodCall($expr);
+        } else if ($expr instanceof Variable) {
+            return $this->parseVariable($expr);
         }
         throw new Error("An expression of type " . get_class($expr) . " is not supported");
     }
