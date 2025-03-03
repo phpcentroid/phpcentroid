@@ -106,12 +106,12 @@ class DataQueryable implements iQueryable
     }
 
     /**
-     * @param mixed $arg
+     * @param mixed $expr
      * @return $this
      */
-    public function where(mixed $arg): DataQueryable
+    public function where(mixed $expr): DataQueryable
     {
-        $this->query->where($arg);
+        $this->query->where($expr);
         return $this;
     }
 

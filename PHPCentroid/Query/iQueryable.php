@@ -2,13 +2,15 @@
 
 namespace PHPCentroid\Query;
 
+use Closure;
+
 interface iQueryable
 {
     /**
-     * @param string|SelectableExpression $arg,...
+     * @param string|SelectableExpression ...$args
      * @return $this
      */
-    public function select(mixed $arg): self;
+    public function select(mixed ...$args): self;
 
     /**
      * @param string|SelectableExpression $arg,...
@@ -51,10 +53,10 @@ interface iQueryable
     public function thenByDescending(mixed $expr): self;
 
     /**
-     * @param mixed $arg
+     * @param string|SelectableExpression|Closure $expr
      * @return $this
      */
-    public function where(mixed $arg): self;
+    public function where(mixed $expr, mixed ...$params): self;
 
     /**
      * @param mixed $arg

@@ -5,6 +5,7 @@
 namespace PHPCentroid\Query;
 
 use Closure;
+use Exception;
 use Error;
 use PHPCentroid\Common\EventEmitter;
 use PhpParser\Node\Arg;
@@ -23,7 +24,6 @@ use PhpParser\Parser;
 use PhpParser\ParserFactory;
 use Opis\Closure\SerializableClosure;
 use Opis\Closure\ReflectionClosure;
-use PHPUnit\Framework\Exception;
 use ReflectionException;
 
 use PHPCentroid\Common\Args;
@@ -37,7 +37,7 @@ class ClosureParser {
     private EventEmitter $resolvingJoinMember;
     /** @noinspection PhpPropertyOnlyWrittenInspection */
     private EventEmitter $resolvingMethod;
-    private array $params;
+    private array $params = array();
 
     public function __construct()
     {
@@ -81,50 +81,63 @@ class ClosureParser {
 
     /**
      * @throws ReflectionException
+     * @throws Exception
      */
     public function parseFilter(Closure $closure,mixed ...$params): array {
-        $closureExpr = $this->getClosure($closure);
-        $this->params = $this->getParams($closureExpr, $params);
-        $stmts = $closureExpr->getStmts();
-        $stmt = current($stmts);
-        if ($stmt instanceof Stmt\Return_) {
-            $expr = $stmt->expr;
-            if ($expr instanceof BinaryOp) {
-                return $this->parseCommon($expr);
+        try {
+            $closureExpr = $this->getClosure($closure);
+            $this->params = $this->getParams($closureExpr, $params);
+            $stmts = $closureExpr->getStmts();
+            $stmt = current($stmts);
+            if ($stmt instanceof Stmt\Return_) {
+                $expr = $stmt->expr;
+                if ($expr instanceof BinaryOp) {
+                    return $this->parseCommon($expr);
+                }
             }
+        } finally {
+            // clear params
+            $this->params = array();
         }
-        throw new Exception('Invalid filter closure. Expected a closure with a binary expression.');
+        throw new Exception('Invalid where closure. Expected a closure which returns a binary expression.');
     }
 
     /**
      * @param Closure $closure
      * @param mixed ...$params
      * @return array
-     * @throws ReflectionException
      */
     public function parseSelect(Closure $closure,mixed ...$params): array
     {
-        $closureExpr = $this->getClosure($closure);
-        $arr = array();
-        $stmts = $closureExpr->getStmts();
-        $stmt = current($stmts);
-        if ($stmt instanceof Stmt\Return_) {
-            $expr = $stmt->expr;
-            if ($expr instanceof Array_) {
-                foreach ($expr->items as $item) {
-                    if ($item->key instanceof String_) {
-                        $arr[$item->key->value] = $this->parseCommon($item->value);
-                    } else {
-                        $arr[] = $this->parseCommon($item->value);
+        try {
+            $closureExpr = $this->getClosure($closure);
+            $this->params = $this->getParams($closureExpr, $params);
+            $arr = array();
+            $stmts = $closureExpr->getStmts();
+            $stmt = current($stmts);
+            if ($stmt instanceof Stmt\Return_) {
+                $expr = $stmt->expr;
+                if ($expr instanceof Array_) {
+                    foreach ($expr->items as $item) {
+                        if ($item->key instanceof String_) {
+                            $arr[$item->key->value] = $this->parseCommon($item->value);
+                        } else {
+                            $arr[] = $this->parseCommon($item->value);
+                        }
                     }
+                } else if ($expr instanceof PropertyFetch) {
+                    $arr[$expr->name->name] = $this->parseCommon($expr);
                 }
-            } else if ($expr instanceof PropertyFetch) {
-                $arr[$expr->name->name] = $this->parseCommon($expr);
             }
+            return $arr;
+        } finally {
+            $this->params = array();
         }
-        return $arr;
     }
 
+    /**
+     * @throws Exception
+     */
     public function parseMember(PropertyFetch $member): array
     {
         if ($member->var instanceof PropertyFetch) {
@@ -205,6 +218,9 @@ class ClosureParser {
         return array($escaped => $args);
     }
 
+    /**
+     * @throws Exception
+     */
     public function parseBinary(BinaryOp $expr): array {
         $binaryOperator = $expr->getOperatorSigil();
         $left = $this->parseCommon($expr->left);
@@ -243,14 +259,21 @@ class ClosureParser {
         }
     }
 
+    /**
+     * @throws Exception
+     */
     public function parseVariable(Variable $expr): mixed
     {
+        if (!array_key_exists($expr->name, $this->params)) {
+            throw new Exception('The variable ' . $expr->name . ' is not defined');
+        }
         return $this->params[$expr->name];
     }
 
     /**
      * @param Expr $expr
      * @return DataQueryExpression
+     * @throws Exception
      */
     public function parseCommon(Expr $expr): mixed {
         if ($expr instanceof PropertyFetch) {
@@ -264,7 +287,7 @@ class ClosureParser {
         } else if ($expr instanceof Variable) {
             return $this->parseVariable($expr);
         }
-        throw new Error("An expression of type " . get_class($expr) . " is not supported");
+        throw new Exception("An expression of type " . get_class($expr) . " is not supported");
     }
 
 }

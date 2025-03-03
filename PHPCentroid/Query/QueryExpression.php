@@ -56,7 +56,6 @@ class QueryExpression implements iQueryable
     /**
      * @param string|SelectableExpression|Closure|array ...$args
      * @return $this
-     * @throws ReflectionException
      */
     public function select(...$args): iQueryable
     {
@@ -154,6 +153,12 @@ class QueryExpression implements iQueryable
      */
     public function groupBy(...$args): iQueryable
     {
+        if ($args[0] instanceof Closure) {
+            $closure = array_shift($args);
+            $parser = new ClosureParser();
+            $this->params['groupby'] = $parser->parseSelect($closure, ...$args);
+            return $this;
+        }
         $this->params['groupby'] = array();
         foreach ($args as $arg) {
             if (is_string($arg)) {
@@ -171,20 +176,28 @@ class QueryExpression implements iQueryable
     }
 
     /**
-     * @param SelectableExpression|string ...$expr
+     * @param SelectableExpression|string|Closure ...$args
      * @return $this
      */
-    public function orderBy($expr): iQueryable {
-        $arguments = func_get_args();
-        $this->params['orderby'] = new MemberListExpression(array());
-        foreach ($arguments as $argument) {
-            Args::check(is_string($argument) || ($argument instanceof SelectableExpression), "Invalid order argument. Expected string or a valid selectable expression");
-            if (is_string($expr)) {
-                $this->params['orderby']->append(new MemberExpression($argument));
+    public function orderBy(mixed ...$args): iQueryable {
+        if ($args[0] instanceof Closure) {
+            // get closure
+            $closure = array_shift($args);
+            $parser = new ClosureParser();
+            $this->params['orderby'] = $parser->parseSelect($closure, ...$args);
+            return $this;
+        }
+        $this->params['orderby'] = array();
+        foreach ($args as $arg) {
+            Args::check(is_string($arg) || ($arg instanceof SelectableExpression), "Invalid order argument. Expected string or a valid selectable expression");
+            if (is_string($arg)) {
+                $this->params['orderby'][] = array(
+                    '$expr' => "$$arg",
+                    'direction' => 1
+                );
             }
-            else {
-                $expr->alias = NULL;
-                $this->params['orderby']->append($argument);
+            else if ($arg instanceof SelectableExpression) {
+                $this->params['orderby'][] = $arg->toArray();
             }
         }
         return $this;
@@ -291,18 +304,18 @@ class QueryExpression implements iQueryable
     /**
      * @throws ReflectionException
      */
-    public function where(mixed $arg, mixed ...$params): iQueryable {
-        if ($arg instanceof Closure) {
+    public function where(mixed $expr, mixed ...$params): iQueryable {
+        if ($expr instanceof Closure) {
             $parser = new ClosureParser();
-            $this->params['filter'] = $parser->parseFilter($arg, ...$params);
+            $this->params['filter'] = $parser->parseFilter($expr, ...$params);
             return $this;
         }
-        Args::check(is_string($arg) || ($arg instanceof SelectableExpression),'Invalid argument. Expected string or a valid selectable expression');
-        if (is_string($arg)) {
-            $this->__left = new MemberExpression($arg);
+        Args::check(is_string($expr) || ($expr instanceof SelectableExpression),'Invalid argument. Expected string or a valid selectable expression');
+        if (is_string($expr)) {
+            $this->__left = new MemberExpression($expr);
         }
-        else if ($arg instanceof SelectableExpression) {
-            $this->__left = $arg;
+        else if ($expr instanceof SelectableExpression) {
+            $this->__left = $expr;
         }
         //destroy filter
         if (array_key_exists('filter', $this->params)) {

@@ -245,15 +245,15 @@ class ClosureParserTest extends TestCase
         $db->open();
         $query = (new QueryExpression())->select(
             function($a) {
-                return $a->id;
+                return $a->name;
             }
-        )->from('ProductData')->where(function($a, $name) {
-            return $a->name == $name;
-        }, 'Lenovo Yoga 2 Pro');
+        )->from('ProductData')->where(function($a, $id) {
+            return $a->id == $id;
+        }, 19);
         $result = $db->execute($query);
         $this->assertNotNull($result);
         $product = (object)$result[0];
-        $this->assertNotEmpty($product->id);
+        $this->assertEquals('Lenovo Yoga 2 Pro', $product->name);
         $db->close();
     }
 
