@@ -18,19 +18,19 @@ class ComparisonExpression extends DataQueryExpression
 
     /**
      * Gets or sets the left operand of this expression.
-     * @var DataQueryExpression
+     * @var mixed
      */
-    public $left;
+    public mixed $left;
     /**
      * Gets or sets the right operand of this expression.
-     * @var DataQueryExpression
+     * @var mixed
      */
-    public $right;
+    public mixed $right;
     /**
      * Gets or sets the operator used on expression.
-     * @var DataQueryExpression
+     * @var string
      */
-    public $operator;
+    public string $operator;
     /**
      * ComparisonExpression constructor.
      * @param mixed $left - The left operand
@@ -69,13 +69,25 @@ class ComparisonExpression extends DataQueryExpression
     const OPERATOR_IN = 'in';
     const OPERATOR_NIN = 'nin';
 
-    public function to_str($formatter = NULL)
+    public function to_str($formatter = NULL): string
     {
         if ($formatter instanceof iExpressionFormatter)
             return $formatter->format($this);
         return DataQueryExpression::escape($this->left).' '.$this->operator.' '.DataQueryExpression::escape($this->right);
     }
 
+    public function toArray(): array
+    {
+        $left = $this->left;
+        if ($left instanceof DataQueryExpression) {
+            $left = $left->toArray();
+        }
+        $right = $this->right;
+        if ($right instanceof DataQueryExpression) {
+            $right = $right->toArray();
+        }
+        return array("$$this->operator" => array($left, $right));
+    }
 
 
 }

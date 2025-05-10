@@ -11,24 +11,24 @@ class ArithmeticExpression extends SelectableExpression
      * Gets or sets the left operand of this expression.
      * @var DataQueryExpression
      */
-    public $left;
+    public DataQueryExpression $left;
     /**
      * Gets or sets the right operand of this expression.
      * @var DataQueryExpression
      */
-    public $right;
+    public DataQueryExpression $right;
     /**
      * Gets or sets the operator used on expression.
-     * @var DataQueryExpression
+     * @var string
      */
-    public $operator;
+    public string $operator;
     /**
      * ComparisonExpression constructor.
      * @param mixed $left - The left operand
      * @param string $op - The operator of this expression
      * @param mixed $right - The right operand
      */
-    public function __construct($left, string $op, $right)
+    public function __construct(mixed $left, string $op, mixed $right)
     {
         Args::not_null($left, 'Left operand');
         if (is_string($left))
@@ -47,7 +47,7 @@ class ArithmeticExpression extends SelectableExpression
 
     const OPERATOR_REGEX = '/^(add|sub|mul|div|mod)$/';
 
-    public function to_str($formatter = NULL)
+    public function to_str($formatter = NULL): string
     {
         if ($formatter instanceof iExpressionFormatter)
             return $formatter->format($this);
@@ -55,5 +55,13 @@ class ArithmeticExpression extends SelectableExpression
     }
 
 
-
+    public function toArray(): array
+    {
+        return array(
+            "$$this->operator" => array(
+                $this->left->toArray(),
+                $this->right->toArray()
+            )
+        );
+    }
 }

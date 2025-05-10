@@ -19,23 +19,23 @@ class JoinExpression extends DataQueryExpression
     /**
      * @var string
      */
-    private $direction;
+    private string $direction;
     /**
      * @var EntityExpression
      */
-    private $entity;
+    private EntityExpression $entity;
 
     /**
      * @var ComparisonExpression|LogicalExpression
      */
-    private $expr;
+    private mixed $expr;
 
     /**
      * JoinExpression constructor.
      * @param string|EntityExpression $entity
      * @param string $direction
      */
-    public function __construct($entity, string $direction = 'inner')
+    public function __construct(mixed $entity, string $direction = 'inner')
     {
         if (is_string($entity)) {
             $this->entity = new EntityExpression($entity);
@@ -51,7 +51,7 @@ class JoinExpression extends DataQueryExpression
      * @param ComparisonExpression|LogicalExpression $expr
      * @return $this
      */
-    public function with($expr): JoinExpression
+    public function with(mixed $expr): JoinExpression
     {
         Args::check(($expr instanceof ComparisonExpression)||($expr instanceof LogicalExpression),'Invalid argument. Expected comparison or logical expression');
         $this->expr = $expr;
@@ -59,10 +59,10 @@ class JoinExpression extends DataQueryExpression
     }
 
     /**
-     * @param mixed $formatter
+     * @param mixed|null $formatter
      * @return mixed
      */
-    public function to_str($formatter = NULL): string
+    public function to_str(mixed $formatter = NULL): string
     {
         if ($formatter instanceof iExpressionFormatter)
             return $formatter->format($this);
@@ -71,5 +71,17 @@ class JoinExpression extends DataQueryExpression
             return $this->entity->name.'('.$this->expr->to_str().')';
         else
             return $this->entity->name.'('.$this->expr->to_str().') as '.$this->entity->alias;
+    }
+
+    public function toArray(): array
+    {
+        return array(
+            '$lookup' => array(
+                'from' => $this->entity->name,
+                'direction' => $this->direction,
+                'with' => $this->expr->toArray(),
+                'as' => $this->entity->alias
+            )
+        );
     }
 }

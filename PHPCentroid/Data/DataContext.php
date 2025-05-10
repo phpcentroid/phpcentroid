@@ -40,4 +40,8 @@ class DataContext extends DataContextBase
         return NULL;
     }
 
+    public function finalize(): void {
+        // finalize
+    }
+
 }

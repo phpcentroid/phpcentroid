@@ -2,7 +2,9 @@
 
 namespace PHPCentroid\Serializer\Attributes;
 
-class JsonProperty
+use Attribute;
+
+#[Attribute] class JsonProperty
 {
     private string $name;
 

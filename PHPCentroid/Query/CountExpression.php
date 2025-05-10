@@ -12,4 +12,15 @@ class CountExpression extends MethodCallExpression
         }
         parent::__construct('count', array($arg));
     }
+
+    public function toArray(): array
+    {
+        $arg = current($this->args);
+        if ($arg instanceof DataQueryExpression) {
+            return array('$count' => $arg->toArray());
+        }
+        return array(
+            '$count' => (array)$arg
+        );
+    }
 }

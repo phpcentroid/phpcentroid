@@ -57,5 +57,12 @@ class EntityExpression extends DataQueryExpression
     }
 
 
-
+    public function toArray(): array
+    {
+        if (isset($this->alias)) {
+            return array($this->alias => $this->name);
+        } else {
+            return array($this->name => 1);
+        }
+    }
 }

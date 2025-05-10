@@ -19,4 +19,15 @@ class MinExpression extends MethodCallExpression
         }
         parent::__construct('min', array($arg));
     }
+
+    public function toArray(): array
+    {
+        $arg = current($this->args);
+        if ($arg instanceof DataQueryExpression) {
+            return array('$min' => $arg->toArray());
+        }
+        return array(
+            '$min' => (array)$arg
+        );
+    }
 }

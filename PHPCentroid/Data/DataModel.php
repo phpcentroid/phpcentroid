@@ -52,10 +52,11 @@ class DataModel implements DataModelBase
             // create attributes collection
             $this->attributes = new DataFieldCollection();
             // get inherited fields, if any
-            if ($this->properties->inherits) {
+            if (isset($this->properties->inherits)) {
                 // get inherited fields
                 $inherits = $this->context->getModel($this->properties->inherits);
-                foreach ($inherits->getAttributes() as $field) {
+                $inheritedAttributes = $inherits->getAttributes();
+                foreach ($inheritedAttributes as $field) {
                     // set inherited from
                     $field->setInheritedFrom($this->properties->inherits);
                     // add field to attributes
@@ -88,5 +89,21 @@ class DataModel implements DataModelBase
     public function getSchema(): DataModelProperties
     {
         return $this->properties;
+    }
+
+    public function getSource(): string
+    {
+        if (isset($this->properties->source)) {
+            return $this->properties->source;
+        }
+        return $this->getName() . 'Data';
+    }
+
+    public function getView(): string
+    {
+        if (isset($this->properties->view)) {
+            return $this->properties->view;
+        }
+        return $this->getName() . 'View';
     }
 }

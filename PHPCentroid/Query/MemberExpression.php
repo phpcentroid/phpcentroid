@@ -10,12 +10,12 @@ class MemberExpression extends SelectableExpression
      * Gets or sets a string which represents the name of this member.
      * @var string
      */
-    public $name;
+    public string $name;
     /**
      * Gets or sets a string which represents the entity where this member belongs.
-     * @var string
+     * @var ?string
      */
-    public $entity;
+    public ?string $entity;
 
     /**
      * MemberExpression constructor.
@@ -60,4 +60,19 @@ class MemberExpression extends SelectableExpression
             return $formatter->format($this);
         return $this->name;
     }
+
+    public function toArray(): array
+    {
+        if (isset($this->alias)) {
+            if (isset($this->entity)) {
+                return array($this->alias => "$$this->entity.$this->name");
+            }
+            return array($this->alias => "$$this->name");
+        }
+        if (isset($this->entity)) {
+            return array('$getField' => "$$this->entity.$this->name");
+        }
+        return array('$getField' => $this->name);
+    }
+
 }

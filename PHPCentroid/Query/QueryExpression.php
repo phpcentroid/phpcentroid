@@ -11,33 +11,35 @@ namespace PHPCentroid\Query;
 
 
 use PHPCentroid\Common\Args;
+use ReflectionException;
 use UnexpectedValueException;
+use Closure;
 
 class QueryExpression implements iQueryable
 {
 
-    public $params = array('select' => array(), 'distinct' => FALSE, 'fixed' => FALSE);
+    public array $params = array('select' => array(), 'distinct' => FALSE, 'fixed' => FALSE);
 
     const JOIN_DIRECTION_LEFT = 'left';
     const JOIN_DIRECTION_RIGHT = 'right';
     const JOIN_DIRECTION_INNER = 'inner';
 
     /**
-     * @var SelectableExpression
+     * @var ?SelectableExpression
      */
-    private $__left;
+    private ?SelectableExpression $__left;
     /**
-     * @var string
+     * @var ?string
      */
-    private $__lop;
+    private ?string $__lop;
     /**
-     * @var string
+     * @var ?string
      */
-    private $__prepared_lop;
+    private ?string $__prepared_lop = NULL;
     /**
-     * @var JoinExpression
+     * @var ?JoinExpression
      */
-    private $__join;
+    private ?JoinExpression $__join;
 
     public function __construct($entity = NULL)
     {
@@ -52,26 +54,35 @@ class QueryExpression implements iQueryable
     }
 
     /**
-     * @param string|SelectableExpression $arg,...
+     * @param string|SelectableExpression|Closure|array ...$args
      * @return $this
      */
-    public function select($arg): iQueryable
+    public function select(...$args): iQueryable
     {
-        $arguments = func_get_args();
+        // use closure parser for selecting attributes
+        if ($args[0] instanceof Closure) {
+            $closure = array_shift($args);
+            $parser = new ClosureParser();
+            $this->params['select'] = $parser->parseSelect($closure, ...$args);
+            return $this;
+        }
         $this->params['select'] = array();
-        foreach ($arguments as $argument) {
-            $this->do_select_string($argument);
+        foreach ($args as $arg) {
+            $this->selectField($arg);
         }
         return $this;
     }
 
-    private function do_select_string($argument) {
-        Args::check(is_string($argument) || ($argument instanceof SelectableExpression), "Invalid select argument. Expected string or a valid query expression");
-        if (is_string($argument)) {
-            $this->params['select'][] = new MemberExpression($argument);
-        }
-        else if ($argument instanceof SelectableExpression) {
-            $this->params['select'][] = $argument;
+    private function selectField(mixed $field): void {
+        if (is_string($field)) {
+            $this->params['select'] += [$field => '$' . $field];
+        } else if ($field instanceof SelectableExpression) {
+            $alias = $field->alias ?? NULL;
+            $this->params['select'] += [$alias => $field];
+        } else if (is_array($field)) {
+            $key = key($field);
+            $value = current($field);
+            $this->params['select'] += [$key => $value];
         }
     }
 
@@ -79,36 +90,37 @@ class QueryExpression implements iQueryable
      * @param string|SelectableExpression $arg,...
      * @return $this
      */
-    public function also_select($arg): iQueryable
+    public function alsoSelect($arg): iQueryable
     {
         $arguments = func_get_args();
         if (!array_key_exists('select', $this->params)) {
             $this->params['select'] = array();
         }
         foreach ($arguments as $argument) {
-            $this->do_select_string($argument);
+            $this->selectField($argument);
         }
         return $this;
     }
 
-    public function has_fields() {
+    public function hasFields(): bool
+    {
         if (array_key_exists('select',$this->params)) {
-            return count($this->params['select']);
+            return count($this->params['select']) > 0;
         }
         return false;
     }
 
-    public function has_filter(): bool
+    public function hasFilter(): bool
     {
         return array_key_exists('prepared',$this->params) || array_key_exists('filter',$this->params);
     }
 
-    public function has_orders(): bool
+    public function hasOrders(): bool
     {
         return array_key_exists('orderby',$this->params);
     }
 
-    public function has_groups(): bool
+    public function hasGroups(): bool
     {
         return array_key_exists('groupby',$this->params);
     }
@@ -125,46 +137,67 @@ class QueryExpression implements iQueryable
         return $this;
     }
 
-    /**
-     * @param bool $value
-     */
-    public function distinct(bool $value = TRUE) {
-        if ($value) {
-            $this->params['distinct'] = TRUE;
-        }
-        else {
-            $this->params['distinct'] = FALSE;
-        }
+    public function distinct(bool $value = TRUE): iQueryable {
+        $this->params['distinct'] = $value;
+        return $this;
+    }
+
+    public function fixed(bool $value = TRUE): iQueryable {
+        $this->params['fixed'] = $value;
+        return $this;
     }
 
     /**
-     * @param bool $value
-     */
-    public function fixed(bool $value = TRUE) {
-        if ($value) {
-            $this->params['fixed'] = TRUE;
-        }
-        else {
-            $this->params['fixed'] = FALSE;
-        }
-    }
-
-    /**
-     * @param SelectableExpression|string $expr,...
+     * @param SelectableExpression|string|Closure ...$args
      * @return $this
      */
-    public function group_by($expr): iQueryable
+    public function groupBy(...$args): iQueryable
     {
-        $arguments = func_get_args();
-        $this->params['groupby'] = new MemberListExpression(array());
-        foreach ($arguments as $argument) {
-            Args::check(is_string($argument) || ($argument instanceof SelectableExpression), "Invalid group by argument. Expected string or a valid selectable expression");
-            if (is_string($expr)) {
-                $this->params['groupby']->append(new MemberExpression($argument));
+        if ($args[0] instanceof Closure) {
+            $closure = array_shift($args);
+            $parser = new ClosureParser();
+            $this->params['groupby'] = $parser->parseSelect($closure, ...$args);
+            return $this;
+        }
+        $this->params['groupby'] = array();
+        foreach ($args as $arg) {
+            if (is_string($arg)) {
+                // append field expression
+                $this->params['groupby'][] = [
+                    '$getField' => $arg
+                ];
+            } else {
+                $arg->alias = NULL;
+                // append field expression
+                $this->params['groupby'][] = (array)$arg;
             }
-            else {
-                $expr->alias = NULL;
-                $this->params['orderby']->append($argument);
+        }
+        return $this;
+    }
+
+    /**
+     * @param SelectableExpression|string|Closure ...$args
+     * @return $this
+     */
+    public function orderBy(mixed ...$args): iQueryable {
+        if ($args[0] instanceof Closure) {
+            // get closure
+            $closure = array_shift($args);
+            $parser = new ClosureParser();
+            $this->params['orderby'] = $parser->parseSelect($closure, ...$args);
+            return $this;
+        }
+        $this->params['orderby'] = array();
+        foreach ($args as $arg) {
+            Args::check(is_string($arg) || ($arg instanceof SelectableExpression), "Invalid order argument. Expected string or a valid selectable expression");
+            if (is_string($arg)) {
+                $this->params['orderby'][] = array(
+                    '$expr' => "$$arg",
+                    'direction' => 1
+                );
+            }
+            else if ($arg instanceof SelectableExpression) {
+                $this->params['orderby'][] = $arg->toArray();
             }
         }
         return $this;
@@ -174,27 +207,7 @@ class QueryExpression implements iQueryable
      * @param SelectableExpression|string $expr,...
      * @return $this
      */
-    public function order_by($expr): iQueryable {
-        $arguments = func_get_args();
-        $this->params['orderby'] = new MemberListExpression(array());
-        foreach ($arguments as $argument) {
-            Args::check(is_string($argument) || ($argument instanceof SelectableExpression), "Invalid order argument. Expected string or a valid selectable expression");
-            if (is_string($expr)) {
-                $this->params['orderby']->append(new MemberExpression($argument));
-            }
-            else {
-                $expr->alias = NULL;
-                $this->params['orderby']->append($argument);
-            }
-        }
-        return $this;
-    }
-
-    /**
-     * @param SelectableExpression|string $expr,...
-     * @return $this
-     */
-    public function then_by($expr): iQueryable {
+    public function thenBy($expr): iQueryable {
         Args::check(array_key_exists('orderby', $this->params), "Order expression has not been yet initialized.");
         $arguments = func_get_args();
         foreach ($arguments as $argument) {
@@ -215,18 +228,18 @@ class QueryExpression implements iQueryable
      * @param SelectableExpression|string $expr,...
      * @return $this
      */
-    public function order_by_descending($expr): iQueryable
+    public function orderByDescending($expr): iQueryable
     {
         $arguments = func_get_args();
         $this->params['orderby'] = new MemberListExpression(array());
         foreach ($arguments as $argument) {
             Args::check(is_string($argument) || ($argument instanceof SelectableExpression), "Invalid order argument. Expected string or a valid selectable expression");
             if (is_string($expr)) {
-                $this->params['orderby']->append(MemberExpression::create($expr)->order_by(SelectableExpression::ORDER_DESCENDING));
+                $this->params['orderby']->append(MemberExpression::create($expr)->orderBy(SelectableExpression::ORDER_DESCENDING));
             }
             else {
                 $expr->alias = NULL;
-                $expr->order_by(SelectableExpression::ORDER_DESCENDING);
+                $expr->orderBy(SelectableExpression::ORDER_DESCENDING);
                 $this->params['orderby']->append($expr);
             }
         }
@@ -237,18 +250,18 @@ class QueryExpression implements iQueryable
      * @param SelectableExpression|string $expr,...
      * @return $this
      */
-    public function then_by_descending($expr): iQueryable
+    public function thenByDescending($expr): iQueryable
     {
         Args::check(array_key_exists('orderby', $this->params), "Order expression has not been yet initialized.");
         $arguments = func_get_args();
         foreach ($arguments as $argument) {
             Args::check(is_string($argument) || ($argument instanceof SelectableExpression), "Invalid order argument. Expected string or a valid selectable expression");
             if (is_string($expr)) {
-                $this->params['orderby']->append(MemberExpression::create($expr)->order_by(SelectableExpression::ORDER_DESCENDING));
+                $this->params['orderby']->append(MemberExpression::create($expr)->orderBy(SelectableExpression::ORDER_DESCENDING));
             }
             else {
                 $expr->alias = NULL;
-                $expr->order_by(SelectableExpression::ORDER_DESCENDING);
+                $expr->orderBy(SelectableExpression::ORDER_DESCENDING);
                 $this->params['orderby']->append($expr);
             }
         }
@@ -258,7 +271,8 @@ class QueryExpression implements iQueryable
     /**
      * @param ComparisonExpression $comparison
      */
-    private function __append_comparison(ComparisonExpression $comparison) {
+    private function __append_comparison(ComparisonExpression $comparison): void
+    {
         if (array_key_exists('filter', $this->params)) {
             if (is_null($this->__lop)) {
                 $this->__lop = LogicalExpression::OPERATOR_AND;
@@ -288,17 +302,20 @@ class QueryExpression implements iQueryable
     }
 
     /**
-     * @param mixed $arg
-     * @return $this
+     * @throws ReflectionException
      */
-    public function where($arg): iQueryable {
-        Args::not_null($arg,'Filter attribute');
-        Args::check(is_string($arg) || ($arg instanceof SelectableExpression),'Invalid argument. Expected string or a valid selectable expression');
-        if (is_string($arg)) {
-            $this->__left = new MemberExpression($arg);
+    public function where(mixed $expr, mixed ...$params): iQueryable {
+        if ($expr instanceof Closure) {
+            $parser = new ClosureParser();
+            $this->params['filter'] = $parser->parseFilter($expr, ...$params);
+            return $this;
         }
-        else if ($arg instanceof SelectableExpression) {
-            $this->__left = $arg;
+        Args::check(is_string($expr) || ($expr instanceof SelectableExpression),'Invalid argument. Expected string or a valid selectable expression');
+        if (is_string($expr)) {
+            $this->__left = new MemberExpression($expr);
+        }
+        else if ($expr instanceof SelectableExpression) {
+            $this->__left = $expr;
         }
         //destroy filter
         if (array_key_exists('filter', $this->params)) {
@@ -311,7 +328,7 @@ class QueryExpression implements iQueryable
      * @param mixed $arg
      * @return $this
      */
-    public function also($arg): iQueryable {
+    public function also(mixed $arg): iQueryable {
         Args::not_null($arg,'Filter attribute');
         Args::check(is_string($arg) || ($arg instanceof SelectableExpression),'Invalid filter attribute. Expected string or a valid selectable expression');
         $this->__lop = 'and';
@@ -328,7 +345,7 @@ class QueryExpression implements iQueryable
      * @param mixed $arg
      * @return $this
      */
-    public function either($arg): iQueryable
+    public function either(mixed $arg): iQueryable
     {
         Args::not_null($arg,'Filter attribute');
         Args::check(is_string($arg) || ($arg instanceof SelectableExpression),'Invalid filter attribute. Expected string or a valid selectable expression');
@@ -349,7 +366,7 @@ class QueryExpression implements iQueryable
     {
         if (is_null($this->params['filter']))
             return $this;
-        if (is_null($this->__prepared_lop)) {
+        if (isset($this->__prepared_lop)) {
             $this->__prepared_lop = LogicalExpression::OPERATOR_AND;
         }
         if (isset($this->params['prepared'])) {
@@ -410,7 +427,7 @@ class QueryExpression implements iQueryable
      * @param mixed $value
      * @return $this
      */
-    public function equal($value): iQueryable
+    public function equal(mixed $value): iQueryable
     {
         $this->__append_comparison(new ComparisonExpression($this->__left,  ComparisonExpression::OPERATOR_EQUAL, $value));
         $this->__left = NULL;
@@ -421,7 +438,7 @@ class QueryExpression implements iQueryable
      * @param mixed $value
      * @return $this
      */
-    public function not_equal($value): iQueryable
+    public function notEqual(mixed $value): iQueryable
     {
         $this->__append_comparison(new ComparisonExpression($this->__left,  ComparisonExpression::OPERATOR_NOT_EQUAL, $value));
         $this->__left = NULL;
@@ -432,7 +449,7 @@ class QueryExpression implements iQueryable
      * @param mixed $value
      * @return $this
      */
-    public function lower_than($value): iQueryable
+    public function lowerThan(mixed $value): iQueryable
     {
         Args::check(!is_null($value), "The right operand may cannot be null");
         $this->__append_comparison(new ComparisonExpression($this->__left,  ComparisonExpression::OPERATOR_LOWER, $value));
@@ -444,7 +461,7 @@ class QueryExpression implements iQueryable
      * @param mixed $value
      * @return $this
      */
-    public function lower_or_equal($value): iQueryable
+    public function lowerOrEqual(mixed $value): iQueryable
     {
         Args::check(!is_null($value), "The right operand may cannot be null");
         $this->__append_comparison(new ComparisonExpression($this->__left,  ComparisonExpression::OPERATOR_LOWER_OR_EQUAL, $value));
@@ -456,7 +473,7 @@ class QueryExpression implements iQueryable
      * @param mixed $value
      * @return $this
      */
-    public function greater_than($value): iQueryable
+    public function greaterThan(mixed $value): iQueryable
     {
         Args::check(!is_null($value), "The right operand may cannot be null");
         $this->__append_comparison(new ComparisonExpression($this->__left,  ComparisonExpression::OPERATOR_GREATER, $value));
@@ -468,7 +485,7 @@ class QueryExpression implements iQueryable
      * @param mixed $value
      * @return $this
      */
-    public function greater_or_equal($value): iQueryable
+    public function greaterOrEqual(mixed $value): iQueryable
     {
         Args::check(!is_null($value), "The right operand may cannot be null");
         $this->__append_comparison(new ComparisonExpression($this->__left,  ComparisonExpression::OPERATOR_GREATER_OR_EQUAL, $value));
@@ -493,63 +510,72 @@ class QueryExpression implements iQueryable
         return $this;
     }
 
-    public function get_day(): QueryExpression
+    public function getDay(): QueryExpression
     {
         return $this->wrap_left_operand_with_method('day');
     }
 
-    public function get_month() {
+    public function getMonth(): iQueryable
+    {
         return $this->wrap_left_operand_with_method('month');
     }
 
-    public function get_year() {
+    public function getYear(): iQueryable
+    {
         return $this->wrap_left_operand_with_method('year');
     }
 
-    public function get_seconds() {
+    public function getSeconds(): iQueryable
+    {
         return $this->wrap_left_operand_with_method('second');
     }
 
-    public function get_minutes(): QueryExpression
+    public function getMinutes(): QueryExpression
     {
         return $this->wrap_left_operand_with_method('minute');
     }
 
 
-    public function get_hours(): QueryExpression
+    public function getHours(): QueryExpression
     {
         return $this->wrap_left_operand_with_method('hour');
     }
 
-    public function get_date(): QueryExpression
+    public function getDate(): QueryExpression
     {
         return $this->wrap_left_operand_with_method('date');
     }
 
-    public function to_lower_case() {
+    public function toLowerCase(): iQueryable|static
+    {
         return $this->wrap_left_operand_with_method('tolower');
     }
 
-    public function to_upper_case() {
+    public function toUpperCase(): iQueryable|static
+    {
         return $this->wrap_left_operand_with_method('toupper');
     }
 
-    public function floor() {
+    public function floor(): iQueryable
+    {
         return $this->wrap_left_operand_with_method('floor');
     }
 
-    public function ceil() {
+    public function ceil(): iQueryable
+    {
         return $this->wrap_left_operand_with_method('ceiling');
     }
 
-    public function trim() {
+    public function trim(): iQueryable
+    {
         return $this->wrap_left_operand_with_method('trim');
     }
 
     /**
      * @return $this
      */
-    public function length() {
+    public function length(): iQueryable
+    {
         return $this->wrap_left_operand_with_method('length');
     }
 
@@ -566,7 +592,7 @@ class QueryExpression implements iQueryable
      * @param mixed $x
      * @return $this
      */
-    public function add($x): iQueryable
+    public function add(mixed $x): iQueryable
     {
         Args::check(is_numeric($x), "Invalid argument. Expected numeric");
         return $this->wrap_left_operand_with_method('add', array(new LiteralExpression($x)));
@@ -576,7 +602,7 @@ class QueryExpression implements iQueryable
      * @param mixed $x
      * @return $this
      */
-    public function subtract($x): iQueryable
+    public function subtract(mixed $x): iQueryable
     {
         Args::check(is_numeric($x), "Invalid argument. Expected numeric");
         return $this->wrap_left_operand_with_method('sub', array(new LiteralExpression($x)));
@@ -586,7 +612,7 @@ class QueryExpression implements iQueryable
      * @param mixed $x
      * @return $this
      */
-    public function multiply($x): iQueryable
+    public function multiply(mixed $x): iQueryable
     {
         Args::check(is_numeric($x), "Invalid argument. Expected numeric");
         return $this->wrap_left_operand_with_method('mul', array(new LiteralExpression($x)));
@@ -596,7 +622,7 @@ class QueryExpression implements iQueryable
      * @param mixed $x
      * @return $this
      */
-    public function divide($x): iQueryable
+    public function divide(mixed $x): iQueryable
     {
         Args::check(is_numeric($x) && $x!=0, "Invalid argument. Expected numeric other than zero");
         return $this->wrap_left_operand_with_method('div', array(new LiteralExpression($x)));
@@ -606,7 +632,7 @@ class QueryExpression implements iQueryable
      * @param mixed $x
      * @return $this
      */
-    public function mod($x): iQueryable
+    public function mod(mixed $x): iQueryable
     {
         Args::check(is_numeric($x), "Invalid argument. Expected numeric");
         return $this->wrap_left_operand_with_method('mod', array(new LiteralExpression($x)));
@@ -616,7 +642,7 @@ class QueryExpression implements iQueryable
      * @param mixed $x
      * @return $this
      */
-    public function bit($x): iQueryable
+    public function bit(mixed $x): iQueryable
     {
         Args::check(is_numeric($x), "Invalid argument. Expected numeric");
         return $this->wrap_left_operand_with_method('bit', array(new LiteralExpression($x)));
@@ -627,8 +653,7 @@ class QueryExpression implements iQueryable
      * @param string $direction
      * @return $this
      */
-    public function join($entity, string $direction = 'inner'): iQueryable {
-        Args::check(is_string($entity) || ($entity instanceof EntityExpression), "Invalid entity argument. Expected string or a valid entity expression");
+    public function join(string|EntityExpression $entity, string $direction = 'inner'): iQueryable {
         $this->__join = new JoinExpression($entity,$direction);
         return $this;
     }
@@ -637,7 +662,7 @@ class QueryExpression implements iQueryable
      * @param ComparisonExpression|LogicalExpression $expr
      * @return $this
      */
-    public function with($expr): iQueryable {
+    public function with(LogicalExpression|ComparisonExpression $expr): iQueryable {
         Args::check($this->__join instanceof JoinExpression, "Join entity expression has not been initialized.");
         $this->__join->with($expr);
         if (isset($this->params['expand'])) {

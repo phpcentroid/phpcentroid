@@ -16,12 +16,12 @@ class LogicalExpression extends DataQueryExpression
      * Gets or sets a string which represents the logical operator.
      * @var string
      */
-    public $operator;
+    public string $operator;
     /**
      * Gets or sets an array which represents the arguments of this expression.
-     * @var string
+     * @var array
      */
-    public $args = array();
+    public array $args = array();
 
     const OPERATOR_REGEX = '/^(and|or|not|nor)$/';
     const OPERATOR_AND = 'and';
@@ -41,7 +41,7 @@ class LogicalExpression extends DataQueryExpression
         $this->args = $args;
     }
 
-    public function to_str($formatter = NULL)
+    public function to_str($formatter = NULL): string
     {
         if ($formatter instanceof iExpressionFormatter)
             return $formatter->format($this);
@@ -51,4 +51,18 @@ class LogicalExpression extends DataQueryExpression
         }
         return '('.implode(' '.$this->operator.' ', $array).')';
     }
+
+    public function toArray(): array
+    {
+        $args = array();
+        foreach ($this->args as $arg) {
+            if ($arg instanceof DataQueryExpression) {
+                $args[] = $arg->toArray();
+            } else {
+                $args[] = (array)$arg;
+            }
+        }
+        return array("$$this->operator" => $args);
+    }
+
 }

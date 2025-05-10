@@ -10,4 +10,8 @@ interface DataModelBase
     public function setContext(DataContextBase $context);
     public function getSchema(): DataModelProperties;
 
+    public function getSource(): string;
+    public function getView(): string;
+
+
 }

@@ -16,19 +16,19 @@ class MethodCallExpression extends SelectableExpression
      * Gets or sets a string which represents the name of the method.
      * @var string
      */
-    public $method;
+    public string $method;
     /**
      * Gets or sets an array which represents the arguments of this method.
-     * @var string
+     * @var array
      */
-    public $args = array();
+    public array $args = array();
 
     /**
      * MethodCallExpression constructor.
      * @param string $method - The name of the method
-     * @param array|string|DataQueryExpression $arg - An argument or an array of arguments
+     * @param array|string|DataQueryExpression|null $arg - An argument or an array of arguments
      */
-    public function __construct(string $method, $arg = NULL)
+    public function __construct(string $method, array|string|DataQueryExpression $arg = NULL)
     {
         Args::not_blank($method, "Method");
         if (!is_null($arg)) {
@@ -54,11 +54,24 @@ class MethodCallExpression extends SelectableExpression
         }
     }
 
-    public function to_str($formatter = NULL)
+    public function to_str($formatter = NULL): string
     {
         $array = array();
         if ($formatter instanceof iExpressionFormatter)
             return $formatter->format($this);
         return $this->method.'('.implode(',',$array).')';
+    }
+
+    public function toArray(): array
+    {
+        $args = array();
+        foreach ($this->args as $arg) {
+            if ($arg instanceof DataQueryExpression) {
+                $args[] = $arg->toArray();
+            } else {
+                $args[] = (array)$arg;
+            }
+        }
+        return array("$$this->method" => $args);
     }
 }
